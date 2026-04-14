@@ -9,11 +9,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const { id, creator_id, category_id, search, sort_by, sort_order } = req.query;
 
-    let query = `SELECT e.*, 
+    let query = `SELECT e.id, e.creator_id, e.title, e.description, e.location, e.start_date, e.start_time, e.end_date, e.end_time, e.capacity, e.price_type, e.price, e.website, e.category_id, e.laboratory, e.created_at,
+                        (e.pdf_file IS NOT NULL) AS has_pdf,
                         c.name AS category_name, c.uni_exclusive,
                         u.name AS creator_name, u.role AS creator_role,
                         t.name AS team_name,
-                        (SELECT COUNT(*) FROM event_registrations er WHERE er.event_id = e.id) AS registration_count
+                        (SELECT COUNT(*) FROM event_registrations er WHERE er.event_id = e.id) AS registration_count,
+                        (SELECT COUNT(*) FROM event_redirects erd WHERE erd.event_id = e.id) AS redirect_count,
+                        (SELECT GROUP_CONCAT(sg.name SEPARATOR '|') FROM supervisor_guests sg WHERE sg.event_id = e.id AND sg.role = 'reviewer') AS reviewers_str,
+                        (SELECT GROUP_CONCAT(sg.name SEPARATOR '|') FROM supervisor_guests sg WHERE sg.event_id = e.id AND sg.role = 'organizer') AS organizers_str
                  FROM events e
                  LEFT JOIN event_categories c ON e.category_id = c.id
                  LEFT JOIN users u ON e.creator_id = u.id
@@ -51,8 +55,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const conn = db.getConnection();
         if (!conn) throw new Error('Database connection failed');
 
-        const [rows] = await conn.execute(query, params);
-        sendResponse(res, true, 'Events retrieved', rows);
+        const [rows]: any = await conn.execute(query, params);
+        const mapped = (rows as any[]).map((r: any) => ({
+            ...r,
+            is_paid: r.price_type === 'paid',
+            join_url: r.website,
+            registration_count: r.price_type === 'paid' ? r.redirect_count : r.registration_count,
+            reviewers: r.reviewers_str ? r.reviewers_str.split('|') : [],
+            organizers: r.organizers_str ? r.organizers_str.split('|') : [],
+            reviewers_str: undefined,
+            organizers_str: undefined,
+            redirect_count: undefined,
+        }));
+        sendResponse(res, true, 'Events retrieved', mapped);
     } catch (err) {
         console.error('Get events error:', err);
         sendResponse(res, false, 'Internal server error', null, 500);

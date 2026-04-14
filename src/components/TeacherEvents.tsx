@@ -27,6 +27,7 @@ const emptyForm = () => ({
     reviewers: [] as string[],
     organizers: [] as string[],
     proofOfAccess: '',
+    proofOfAccessBase64: '',
     laboratory: ''
 });
 
@@ -114,7 +115,7 @@ export function TeacherEvents({ currentUser }: TeacherEventsProps) {
             toast.error('End time cannot be before start time.');
             return;
         }
-        if (!form.proofOfAccess) {
+        if (!form.proofOfAccess && !editingId) { // Only require proof on creation, or if it's being updated
             toast.error('Proof document (PDF) is required.');
             return;
         }
@@ -122,9 +123,13 @@ export function TeacherEvents({ currentUser }: TeacherEventsProps) {
             const payload: any = {
                 title: form.title, description: form.description, location: form.location,
                 start_date: form.startDate, start_time: form.startTime, end_date: form.endDate, end_time: form.endTime,
-                max_seats: form.maxSeats || null, is_paid: form.isPaid, price: form.isPaid ? form.price : null,
-                join_url: form.joinUrl || null, category_id: form.category, creator_id: currentUser?.id,
+                capacity: form.maxSeats || null, price_type: form.isPaid ? 'paid' : 'free', price: form.isPaid ? form.price : 0,
+                website: form.joinUrl || null, category_id: form.category, creator_id: currentUser?.id,
+                reviewers: form.reviewers, organizers: form.organizers, laboratory: form.laboratory
             };
+            if (form.proofOfAccessBase64) {
+                payload.pdf_file = form.proofOfAccessBase64;
+            }
             if (editingId) {
                 const res = await api.events.update({ id: editingId, ...payload });
                 if (res.success) { toast.success('Event updated.'); fetchEvents(); }
@@ -144,11 +149,12 @@ export function TeacherEvents({ currentUser }: TeacherEventsProps) {
         setForm({
             title: e.title, description: e.description || '', location: e.location,
             startDate: e.start_date, startTime: e.start_time || '', endDate: e.end_date, endTime: e.end_time || '',
-            maxSeats: e.max_seats || 0, isPaid: !!e.is_paid, price: e.price || 0, joinUrl: e.join_url || '',
+            maxSeats: e.capacity || 0, isPaid: e.price_type === 'paid', price: e.price || 0, joinUrl: e.website || '',
             category: e.category_id || '',
-            reviewers: [], organizers: [],
-            proofOfAccess: e.proof_pdf ? 'attached' : '',
-            laboratory: ''
+            reviewers: e.reviewers || [], organizers: e.organizers || [],
+            proofOfAccess: e.pdf_file ? 'attached' : '',
+            proofOfAccessBase64: '',
+            laboratory: e.laboratory || ''
         });
         setEditingId(e.id);
         setIsOpen(true);
@@ -161,6 +167,24 @@ export function TeacherEvents({ currentUser }: TeacherEventsProps) {
             if (res.success) { toast.success('Event deleted.'); fetchEvents(); }
             else toast.error(res.message);
         } catch (e) { toast.error('Server error.'); }
+    };
+
+    const handleExportPDF = async (event: any) => {
+        try {
+            const toastId = toast.loading('Fetching applicants...');
+            let applicants: any[] = [];
+            if (event.is_paid) {
+                const res = await api.eventRedirects.get({ event_id: event.id });
+                if (res.success && Array.isArray(res.data)) applicants = res.data;
+            } else {
+                const res = await api.eventRegistrations.get({ event_id: event.id });
+                if (res.success && Array.isArray(res.data)) applicants = res.data;
+            }
+            toast.dismiss(toastId);
+            exportEventApplicantsPDF(event, applicants);
+        } catch (e) {
+            toast.error('Failed to fetch applicants for PDF');
+        }
     };
 
     const toggle = (id: string) => setExpanded(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
@@ -220,9 +244,14 @@ export function TeacherEvents({ currentUser }: TeacherEventsProps) {
                                                     onChange={e => {
                                                         const file = e.target.files?.[0];
                                                         if (file) {
-                                                            setForm(p => ({ ...p, proofOfAccess: file.name }));
+                                                            const reader = new FileReader();
+                                                            reader.onloadend = () => {
+                                                                const base64String = (reader.result as string).split(',')[1];
+                                                                setForm(p => ({ ...p, proofOfAccess: file.name, proofOfAccessBase64: base64String || '' }));
+                                                            };
+                                                            reader.readAsDataURL(file);
                                                         } else {
-                                                            setForm(p => ({ ...p, proofOfAccess: '' }));
+                                                            setForm(p => ({ ...p, proofOfAccess: '', proofOfAccessBase64: '' }));
                                                         }
                                                     }}
                                                 />
@@ -235,97 +264,104 @@ export function TeacherEvents({ currentUser }: TeacherEventsProps) {
                                         </div>
                                     </div>
 
-                                    {(form.category === 'Conference' || form.category === 'Seminar') && (
-                                        <div className="bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 p-4 rounded-lg space-y-4 mb-2">
-                                            <p className="text-xs font-medium text-blue-800 dark:text-blue-300">
-                                                <Mic className="h-3.5 w-3.5 inline mr-1 mb-0.5" />
-                                                These categories require additional teams and verified clearance.
-                                            </p>
+                                    {(() => {
+                                        const selectedCat = categories.find(c => c.id === form.category);
+                                        if (selectedCat?.uni_exclusive) {
+                                            return (
+                                                <div className="bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 p-4 rounded-lg space-y-4 mb-2 mt-2">
+                                                    <p className="text-xs font-medium text-blue-800 dark:text-blue-300">
+                                                        <Mic className="h-3.5 w-3.5 inline mr-1 mb-0.5" />
+                                                        This exclusive category requires additional verified details.
+                                                    </p>
 
-                                            {/* Reviewers */}
-                                            <div className="grid grid-cols-4 items-start gap-4">
-                                                <Label className="text-right text-sm mt-2">Reviewers</Label>
-                                                <div className="col-span-3 space-y-2">
-                                                    <div className="flex gap-2">
-                                                        <Input placeholder="Reviewer name" value={newReviewer} onChange={e => setNewReviewer(e.target.value)}
-                                                            onKeyDown={e => {
-                                                                if (e.key === 'Enter') {
-                                                                    e.preventDefault();
+                                                    {/* Reviewers */}
+                                                    <div className="grid grid-cols-4 items-start gap-4">
+                                                        <Label className="text-right text-sm mt-2">Reviewers</Label>
+                                                        <div className="col-span-3 space-y-2">
+                                                            <div className="flex gap-2">
+                                                                <Input placeholder="Reviewer name" value={newReviewer} onChange={e => setNewReviewer(e.target.value)}
+                                                                    onKeyDown={e => {
+                                                                        if (e.key === 'Enter') {
+                                                                            e.preventDefault();
+                                                                            if (newReviewer.trim()) {
+                                                                                setForm(p => ({ ...p, reviewers: [...p.reviewers, newReviewer.trim()] }));
+                                                                                setNewReviewer('');
+                                                                            }
+                                                                        }
+                                                                    }}
+                                                                />
+                                                                <Button type="button" size="sm" variant="secondary" onClick={() => {
                                                                     if (newReviewer.trim()) {
                                                                         setForm(p => ({ ...p, reviewers: [...p.reviewers, newReviewer.trim()] }));
                                                                         setNewReviewer('');
                                                                     }
-                                                                }
-                                                            }}
-                                                        />
-                                                        <Button type="button" size="sm" variant="secondary" onClick={() => {
-                                                            if (newReviewer.trim()) {
-                                                                setForm(p => ({ ...p, reviewers: [...p.reviewers, newReviewer.trim()] }));
-                                                                setNewReviewer('');
-                                                            }
-                                                        }}>Add</Button>
-                                                    </div>
-                                                    {form.reviewers.length > 0 && (
-                                                        <div className="flex flex-wrap gap-2">
-                                                            {form.reviewers.map((r, i) => (
-                                                                <Badge key={i} variant="secondary" className="pl-2 pr-1 py-1 gap-1">
-                                                                    {r}
-                                                                    <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => setForm(p => ({ ...p, reviewers: p.reviewers.filter((_, idx) => idx !== i) }))}>
-                                                                        &times;
-                                                                    </button>
-                                                                </Badge>
-                                                            ))}
+                                                                }}>Add</Button>
+                                                            </div>
+                                                            {form.reviewers.length > 0 && (
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    {form.reviewers.map((r, i) => (
+                                                                        <Badge key={i} variant="secondary" className="pl-2 pr-1 py-1 gap-1">
+                                                                            {r}
+                                                                            <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => setForm(p => ({ ...p, reviewers: p.reviewers.filter((_, idx) => idx !== i) }))}>
+                                                                                &times;
+                                                                            </button>
+                                                                        </Badge>
+                                                                    ))}
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                    )}
-                                                </div>
-                                            </div>
+                                                    </div>
 
-                                            {/* Organizers */}
-                                            <div className="grid grid-cols-4 items-start gap-4">
-                                                <Label className="text-right text-sm mt-2">Organizers</Label>
-                                                <div className="col-span-3 space-y-2">
-                                                    <div className="flex gap-2">
-                                                        <Input placeholder="Organizer name" value={newOrganizer} onChange={e => setNewOrganizer(e.target.value)}
-                                                            onKeyDown={e => {
-                                                                if (e.key === 'Enter') {
-                                                                    e.preventDefault();
+                                                    {/* Organizers */}
+                                                    <div className="grid grid-cols-4 items-start gap-4">
+                                                        <Label className="text-right text-sm mt-2">Organizers</Label>
+                                                        <div className="col-span-3 space-y-2">
+                                                            <div className="flex gap-2">
+                                                                <Input placeholder="Organizer name" value={newOrganizer} onChange={e => setNewOrganizer(e.target.value)}
+                                                                    onKeyDown={e => {
+                                                                        if (e.key === 'Enter') {
+                                                                            e.preventDefault();
+                                                                            if (newOrganizer.trim()) {
+                                                                                setForm(p => ({ ...p, organizers: [...p.organizers, newOrganizer.trim()] }));
+                                                                                setNewOrganizer('');
+                                                                            }
+                                                                        }
+                                                                    }}
+                                                                />
+                                                                <Button type="button" size="sm" variant="secondary" onClick={() => {
                                                                     if (newOrganizer.trim()) {
                                                                         setForm(p => ({ ...p, organizers: [...p.organizers, newOrganizer.trim()] }));
                                                                         setNewOrganizer('');
                                                                     }
-                                                                }
-                                                            }}
-                                                        />
-                                                        <Button type="button" size="sm" variant="secondary" onClick={() => {
-                                                            if (newOrganizer.trim()) {
-                                                                setForm(p => ({ ...p, organizers: [...p.organizers, newOrganizer.trim()] }));
-                                                                setNewOrganizer('');
-                                                            }
-                                                        }}>Add</Button>
-                                                    </div>
-                                                    {form.organizers.length > 0 && (
-                                                        <div className="flex flex-wrap gap-2">
-                                                            {form.organizers.map((o, i) => (
-                                                                <Badge key={i} variant="secondary" className="pl-2 pr-1 py-1 gap-1">
-                                                                    {o}
-                                                                    <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => setForm(p => ({ ...p, organizers: p.organizers.filter((_, idx) => idx !== i) }))}>
-                                                                        &times;
-                                                                    </button>
-                                                                </Badge>
-                                                            ))}
+                                                                }}>Add</Button>
+                                                            </div>
+                                                            {form.organizers.length > 0 && (
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    {form.organizers.map((o, i) => (
+                                                                        <Badge key={i} variant="secondary" className="pl-2 pr-1 py-1 gap-1">
+                                                                            {o}
+                                                                            <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => setForm(p => ({ ...p, organizers: p.organizers.filter((_, idx) => idx !== i) }))}>
+                                                                                &times;
+                                                                            </button>
+                                                                        </Badge>
+                                                                    ))}
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                    )}
-                                                </div>
-                                            </div>
+                                                    </div>
 
-                                            {/* Laboratory */}
-                                            <div className="grid grid-cols-4 items-center gap-4">
-                                                <Label className="text-right text-sm">Laboratory</Label>
-                                                <Input className="col-span-3" placeholder="Managing laboratory" value={(form as any).laboratory}
-                                                    onChange={e => setForm(p => ({ ...p, laboratory: e.target.value }))} />
-                                            </div>
-                                        </div>
-                                    )}
+                                                    {/* Laboratory */}
+                                                    <div className="grid grid-cols-4 items-center gap-4">
+                                                        <Label className="text-right text-sm">Laboratory</Label>
+                                                        <Input className="col-span-3" placeholder="Managing laboratory" value={(form as any).laboratory}
+                                                            onChange={e => setForm(p => ({ ...p, laboratory: e.target.value }))} />
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+                                        return null;
+                                    })()}
+
                                     <div className="grid grid-cols-4 items-start gap-4">
                                         <Label className="text-right text-sm mt-2">Description</Label>
                                         <textarea className="col-span-3 flex min-h-[80px] w-full rounded-md border border-input bg-[var(--input-background)] px-3 py-2 text-sm ring-offset-background resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -441,7 +477,7 @@ export function TeacherEvents({ currentUser }: TeacherEventsProps) {
                                         <Button variant="outline" size="sm" onClick={() => setSelectedEvent(event)}><Eye className="h-4 w-4" /></Button>
                                         <Button variant="outline" size="sm" onClick={() => handleEdit(event)}>Edit</Button>
                                         <Button variant="ghost" size="icon" className="text-gray-400 hover:text-red-600 hover:bg-red-50" onClick={() => handleDelete(event.id)}><Trash2 className="h-4 w-4" /></Button>
-                                        <Button size="sm" variant="secondary" onClick={() => exportEventApplicantsPDF(event)} className="gap-1">
+                                        <Button size="sm" variant="secondary" onClick={() => handleExportPDF(event)} className="gap-1">
                                             <FileDown className="h-4 w-4" />PDF
                                         </Button>
                                     </div>
@@ -518,7 +554,7 @@ export function TeacherEvents({ currentUser }: TeacherEventsProps) {
                                 </div>
                             </ScrollArea>
                             <DialogFooter>
-                                <Button size="sm" variant="secondary" onClick={() => exportEventApplicantsPDF(selectedEvent)} className="gap-1 mr-auto">
+                                <Button size="sm" variant="secondary" onClick={() => handleExportPDF(selectedEvent)} className="gap-1 mr-auto">
                                     <FileDown className="h-4 w-4" />Export PDF
                                 </Button>
                                 <Button variant="outline" onClick={() => setSelectedEvent(null)}>Close</Button>

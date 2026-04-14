@@ -23,6 +23,8 @@ export function PublicEvents() {
     const [eventStatus, setEventStatus] = useState<string>('All');
     const [sortBy, setSortBy] = useState<string>('Most Attended');
 
+    const [categories, setCategories] = useState<any[]>([]);
+
     const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
 
     useEffect(() => {
@@ -32,7 +34,14 @@ export function PublicEvents() {
                 if (res.success && Array.isArray(res.data)) setAllEvents(res.data);
             } catch (e) { console.error('Failed to fetch events', e); }
         };
+        const fetchCategories = async () => {
+            try {
+                const res = await api.eventCategories.get();
+                if (res.success && Array.isArray(res.data)) setCategories(res.data);
+            } catch (e) { console.error('Failed to fetch categories', e); }
+        };
         fetchEvents();
+        fetchCategories();
     }, []);
 
     // MySQL returns dates as ISO strings like '2026-03-10T00:00:00.000Z'
@@ -62,6 +71,9 @@ export function PublicEvents() {
 
             if (viewMode === 'following' && (!e.creator_id || !followedCreatorIds.includes(e.creator_id))) return false;
 
+            // Exclusive events are hidden from guests
+            if (!user && e.uni_exclusive) return false;
+
             if (search) {
                 const query = search.toLowerCase();
                 const matchesSearch =
@@ -73,7 +85,7 @@ export function PublicEvents() {
                 if (!matchesSearch) return false;
             }
 
-            if (category !== 'All' && e.category_name !== category) return false;
+            if (category !== 'All' && e.category_id !== category) return false;
 
             if (creatorType !== 'All') {
                 const ct = creatorType === 'Club' ? 'team_leader' : creatorType.toLowerCase();
@@ -197,7 +209,8 @@ export function PublicEvents() {
                         <Input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 bg-background h-9 border-muted-foreground/20" />
                     </div>
                     <select value={category} onChange={e => setCategory(e.target.value)} className="flex h-9 w-full items-center justify-between rounded-md border border-muted-foreground/20 bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-                        {['All', 'Conference', 'Workshop', 'Seminar', 'Competition', 'Networking', 'Training', 'Open Day', 'Special'].map(c => <option key={c} value={c}>{c === 'All' ? 'Category' : c}</option>)}
+                        <option value="All">All Categories</option>
+                        {categories.map(c => <option key={c.id} value={c.id}>{c.name}{c.uni_exclusive ? ' (Exclusive)' : ''}</option>)}
                     </select>
                     <select value={creatorType} onChange={e => setCreatorType(e.target.value)} className="flex h-9 w-full items-center justify-between rounded-md border border-muted-foreground/20 bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
                         {['All', 'Teacher', 'Company', 'Club'].map(c => <option key={c} value={c}>{c === 'All' ? 'Creator Type' : c}</option>)}

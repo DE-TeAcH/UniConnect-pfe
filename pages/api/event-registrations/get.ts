@@ -9,7 +9,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const { event_id, user_id } = req.query;
 
-    let query = `SELECT er.*, u.name AS user_name, u.email AS user_email, u.affiliation, e.title AS event_title
+    let query = `SELECT er.*, er.applied_at AS registered_at, u.name AS full_name, u.username, u.email, u.affiliation, e.title AS event_title
                  FROM event_registrations er
                  LEFT JOIN users u ON er.user_id = u.id
                  LEFT JOIN events e ON er.event_id = e.id

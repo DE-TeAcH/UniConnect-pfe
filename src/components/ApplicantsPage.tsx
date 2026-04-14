@@ -12,7 +12,8 @@ import {
     Filter, ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, ShieldCheck, ChevronUp, ChevronDown
 } from 'lucide-react';
 import { api } from '../services/api';
-import { exportEventApplicantsPDF } from '../utils/pdfExport';
+import { toast } from 'sonner';
+import { exportEventApplicantsPDF, ApplicantForPDF } from '../utils/pdfExport';
 
 interface ApplicantsPageProps {
     role: 'admin' | 'team-leader' | 'teacher' | 'company';
@@ -146,6 +147,31 @@ export function ApplicantsPage({ role, currentUser }: ApplicantsPageProps) {
         fetchDetail();
     }, [selected]);
 
+    const handleExportPDF = async (event: any) => {
+        console.log('[PDF Debug] event:', event.id, 'is_paid:', event.is_paid, 'price_type:', event.price_type);
+        try {
+            const toastId = toast.loading('Fetching applicants...');
+            let applicants: any[] = [];
+            if (event.is_paid) {
+                console.log('[PDF Debug] Fetching redirects for event_id:', event.id);
+                const res = await api.eventRedirects.get({ event_id: event.id });
+                console.log('[PDF Debug] Redirects response:', JSON.stringify(res));
+                if (res.success && Array.isArray(res.data)) applicants = res.data;
+            } else {
+                console.log('[PDF Debug] Fetching registrations for event_id:', event.id);
+                const res = await api.eventRegistrations.get({ event_id: event.id });
+                console.log('[PDF Debug] Registrations response:', JSON.stringify(res));
+                if (res.success && Array.isArray(res.data)) applicants = res.data;
+            }
+            toast.dismiss(toastId);
+            console.log('[PDF Debug] Calling exportEventApplicantsPDF with', applicants.length, 'applicants');
+            exportEventApplicantsPDF(event, applicants);
+        } catch (e) {
+            toast.error('Failed to fetch applicants for PDF');
+            console.error('[PDF Debug] Error:', e);
+        }
+    };
+
     const filteredFree = useMemo(() => {
         if (!selected || selected.is_paid) return [];
         return registrations
@@ -163,10 +189,10 @@ export function ApplicantsPage({ role, currentUser }: ApplicantsPageProps) {
     const filteredPaid = useMemo(() => {
         if (!selected || !selected.is_paid) return [];
         return redirects
-            .filter(p => (p.full_name || p.username || '').toLowerCase().includes(search.toLowerCase()) || (p.email || '').toLowerCase().includes(search.toLowerCase()))
+            .filter(p => (p.full_name || p.username || 'Guest').toLowerCase().includes(search.toLowerCase()) || (p.email || '').toLowerCase().includes(search.toLowerCase()))
             .sort((a, b) => {
                 let av: string | number = '', bv: string | number = '';
-                if (appSortField === 'name') { av = (a.full_name || a.username || '').toLowerCase(); bv = (b.full_name || b.username || '').toLowerCase(); }
+                if (appSortField === 'name') { av = (a.full_name || a.username || 'Guest').toLowerCase(); bv = (b.full_name || b.username || 'Guest').toLowerCase(); }
                 else { av = a.redirected_at || ''; bv = b.redirected_at || ''; }
                 if (av < bv) return appSortDir === 'asc' ? -1 : 1;
                 if (av > bv) return appSortDir === 'asc' ? 1 : -1;
@@ -344,7 +370,7 @@ export function ApplicantsPage({ role, currentUser }: ApplicantsPageProps) {
                                     </div>
                                     <div className="flex gap-2 w-full sm:w-auto">
                                         <Button size="sm" variant="outline" className="flex-1 sm:flex-none" onClick={() => openDetail(event)}>View</Button>
-                                        <Button size="sm" variant="secondary" className="flex-1 sm:flex-none gap-1" onClick={() => exportEventApplicantsPDF(event)}>
+                                        <Button size="sm" variant="secondary" className="flex-1 sm:flex-none gap-1" onClick={() => handleExportPDF(event)}>
                                             <FileDown className="h-3.5 w-3.5" />PDF
                                         </Button>
                                     </div>
@@ -454,7 +480,7 @@ export function ApplicantsPage({ role, currentUser }: ApplicantsPageProps) {
                                             <div key={p.id || idx} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
                                                 <div className="w-7 h-7 flex items-center justify-center rounded-full bg-orange-100 text-orange-700 text-xs font-bold flex-shrink-0">{idx + 1}</div>
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="font-medium text-sm truncate">{p.full_name || p.username || '—'}</p>
+                                                    <p className="font-medium text-sm truncate">{p.full_name || p.username || 'Guest'}</p>
                                                     <p className="text-xs text-muted-foreground truncate">{p.email || '—'}</p>
                                                 </div>
                                                 <div className="text-xs text-muted-foreground flex-shrink-0">
@@ -471,7 +497,7 @@ export function ApplicantsPage({ role, currentUser }: ApplicantsPageProps) {
 
                             <Separator />
                             <div className="px-6 py-4 flex justify-between items-center">
-                                <Button size="sm" variant="secondary" className="gap-1" onClick={() => exportEventApplicantsPDF(selected)}>
+                                <Button size="sm" variant="secondary" className="gap-1" onClick={() => handleExportPDF(selected)}>
                                     <FileDown className="h-4 w-4" />Export PDF
                                 </Button>
                                 <Button variant="outline" onClick={() => { setSelected(null); setSearch(''); }}>Close</Button>

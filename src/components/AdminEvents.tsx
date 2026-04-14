@@ -17,7 +17,15 @@ import { api } from '../services/api';
 import { exportEventApplicantsPDF } from '../utils/pdfExport';
 import { toast } from 'sonner';
 
-const emptyForm = () => ({ title: '', description: '', location: '', startDate: '', startTime: '', endDate: '', endTime: '', maxSeats: 0, isPaid: false, price: 0, joinUrl: '', team: '', category: '', proofOfAccess: '' });
+const emptyForm = () => ({
+  title: '', description: '', location: '',
+  startDate: '', startTime: '', endDate: '', endTime: '',
+  maxSeats: 0, isPaid: false, price: 0, joinUrl: '',
+  team: '', category: '', proofOfAccess: '',
+  reviewers: [] as string[],
+  organizers: [] as string[],
+  laboratory: ''
+});
 
 function EventBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
@@ -77,6 +85,8 @@ export function AdminEvents() {
 
   const [sortField, setSortField] = useState<'date' | 'title' | 'attendees'>('date');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [newReviewer, setNewReviewer] = useState('');
+  const [newOrganizer, setNewOrganizer] = useState('');
 
   // Category CRUD helpers
   const addCategory = async () => {
@@ -174,6 +184,9 @@ export function AdminEvents() {
         price: form.isPaid ? form.price : null,
         join_url: form.joinUrl,
         category_id: form.category,
+        reviewers: form.reviewers,
+        organizers: form.organizers,
+        laboratory: form.laboratory,
       };
       if (editingId !== null) {
         await api.events.update({ id: editingId, ...payload });
@@ -187,8 +200,35 @@ export function AdminEvents() {
   };
 
   const handleEdit = (e: any) => {
-    setForm({ title: e.title, description: e.description || '', location: e.location, startDate: e.start_date, startTime: e.start_time || '', endDate: e.end_date, endTime: e.end_time || '', maxSeats: e.max_seats || 0, isPaid: e.is_paid, price: e.price || 0, joinUrl: e.join_url || '', team: e.team_name || '', category: e.category_id || '', proofOfAccess: e.proof_pdf || '' });
+    setForm({
+      title: e.title, description: e.description || '', location: e.location,
+      startDate: e.start_date, startTime: e.start_time || '', endDate: e.end_date, endTime: e.end_time || '',
+      maxSeats: e.capacity || 0, isPaid: e.is_paid, price: e.price || 0, joinUrl: e.join_url || '',
+      team: e.team_name || '', category: e.category_id || '',
+      proofOfAccess: e.has_pdf || false,
+      reviewers: e.reviewers || [],
+      organizers: e.organizers || [],
+      laboratory: e.laboratory || ''
+    });
     setEditingId(e.id); setIsOpen(true);
+  };
+
+  const handleExportPDF = async (event: any) => {
+    try {
+      const toastId = toast.loading('Fetching applicants...');
+      let applicants: any[] = [];
+      if (event.is_paid) {
+        const res = await api.eventRedirects.get({ event_id: event.id });
+        if (res.success && Array.isArray(res.data)) applicants = res.data;
+      } else {
+        const res = await api.eventRegistrations.get({ event_id: event.id });
+        if (res.success && Array.isArray(res.data)) applicants = res.data;
+      }
+      toast.dismiss(toastId);
+      exportEventApplicantsPDF(event, applicants);
+    } catch (e) {
+      toast.error('Failed to fetch applicants for PDF');
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -269,8 +309,8 @@ export function AdminEvents() {
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label className="text-right text-sm">Proof (PDF)</Label>
                     <div className="col-span-3 flex items-center gap-2">
-                      {form.proofOfAccess ? (
-                        <a href="#" onClick={e => { e.preventDefault(); toast.info(`Previewing: ${form.proofOfAccess}`); }}
+                      {form.proofOfAccess && editingId ? (
+                        <a href={`/api/events/pdf?id=${editingId}`} target="_blank" rel="noopener noreferrer"
                           className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors bg-black text-white hover:bg-black/80 dark:bg-white dark:text-black dark:hover:bg-white/80">
                           <Eye className="h-4 w-4" />Preview PDF
                         </a>
@@ -278,10 +318,108 @@ export function AdminEvents() {
                         <span className="text-sm text-muted-foreground italic">No document attached</span>
                       )}
                       {form.proofOfAccess && (
-                        <span className="text-xs text-muted-foreground">{form.proofOfAccess}</span>
+                        <span className="text-xs text-muted-foreground ml-2">{form.proofOfAccess}</span>
                       )}
                     </div>
                   </div>
+
+                  {(() => {
+                    const selectedCat = categories.find(c => c.id === form.category);
+                    if (selectedCat?.uni_exclusive) {
+                      return (
+                        <div className="bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 p-4 rounded-lg space-y-4 mb-2">
+                          <p className="text-xs font-medium text-blue-800 dark:text-blue-300">
+                            <Mic className="h-3.5 w-3.5 inline mr-1 mb-0.5" />
+                            This exclusive category requires additional verified details.
+                          </p>
+
+                          {/* Reviewers */}
+                          <div className="grid grid-cols-4 items-start gap-4">
+                            <Label className="text-right text-sm mt-2">Reviewers</Label>
+                            <div className="col-span-3 space-y-2">
+                              <div className="flex gap-2">
+                                <Input placeholder="Reviewer name" value={newReviewer} onChange={e => setNewReviewer(e.target.value)}
+                                  onKeyDown={e => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      if (newReviewer.trim()) {
+                                        setForm(p => ({ ...p, reviewers: [...p.reviewers, newReviewer.trim()] }));
+                                        setNewReviewer('');
+                                      }
+                                    }
+                                  }}
+                                />
+                                <Button type="button" size="sm" variant="secondary" onClick={() => {
+                                  if (newReviewer.trim()) {
+                                    setForm(p => ({ ...p, reviewers: [...p.reviewers, newReviewer.trim()] }));
+                                    setNewReviewer('');
+                                  }
+                                }}>Add</Button>
+                              </div>
+                              {form.reviewers.length > 0 && (
+                                <div className="flex flex-wrap gap-2">
+                                  {form.reviewers.map((r, i) => (
+                                    <Badge key={i} variant="secondary" className="pl-2 pr-1 py-1 gap-1">
+                                      {r}
+                                      <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => setForm(p => ({ ...p, reviewers: p.reviewers.filter((_, idx) => idx !== i) }))}>
+                                        &times;
+                                      </button>
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Organizers */}
+                          <div className="grid grid-cols-4 items-start gap-4">
+                            <Label className="text-right text-sm mt-2">Organizers</Label>
+                            <div className="col-span-3 space-y-2">
+                              <div className="flex gap-2">
+                                <Input placeholder="Organizer name" value={newOrganizer} onChange={e => setNewOrganizer(e.target.value)}
+                                  onKeyDown={e => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      if (newOrganizer.trim()) {
+                                        setForm(p => ({ ...p, organizers: [...p.organizers, newOrganizer.trim()] }));
+                                        setNewOrganizer('');
+                                      }
+                                    }
+                                  }}
+                                />
+                                <Button type="button" size="sm" variant="secondary" onClick={() => {
+                                  if (newOrganizer.trim()) {
+                                    setForm(p => ({ ...p, organizers: [...p.organizers, newOrganizer.trim()] }));
+                                    setNewOrganizer('');
+                                  }
+                                }}>Add</Button>
+                              </div>
+                              {form.organizers.length > 0 && (
+                                <div className="flex flex-wrap gap-2">
+                                  {form.organizers.map((o, i) => (
+                                    <Badge key={i} variant="secondary" className="pl-2 pr-1 py-1 gap-1">
+                                      {o}
+                                      <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => setForm(p => ({ ...p, organizers: p.organizers.filter((_, idx) => idx !== i) }))}>
+                                        &times;
+                                      </button>
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Laboratory */}
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-right text-sm">Laboratory</Label>
+                            <Input className="col-span-3" placeholder="Managing laboratory" value={(form as any).laboratory}
+                              onChange={e => setForm(p => ({ ...p, laboratory: e.target.value }))} />
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
                   {/* Team */}
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label className="text-right text-sm">Team</Label>
@@ -511,7 +649,12 @@ export function AdminEvents() {
                     <Button variant="outline" size="sm" onClick={() => setSelectedEvent(event)}><Eye className="h-4 w-4" /></Button>
                     <Button variant="outline" size="sm" onClick={() => handleEdit(event)}>Edit</Button>
                     <Button variant="ghost" size="icon" className="text-gray-400 hover:text-red-600 hover:bg-red-50" onClick={() => handleDelete(event.id)}><Trash2 className="h-4 w-4" /></Button>
-                    <Button size="sm" variant="secondary" onClick={() => exportEventApplicantsPDF(event)} className="gap-1"><FileDown className="h-4 w-4" />PDF</Button>
+                    {event.has_pdf && (
+                      <a href={`/api/events/pdf?id=${event.id}`} target="_blank" rel="noopener noreferrer">
+                        <Button size="sm" variant="secondary" className="gap-1 bg-blue-50 text-blue-700 border-blue-100 hover:bg-blue-100"><Eye className="h-4 w-4" />View Proof</Button>
+                      </a>
+                    )}
+                    <Button size="sm" variant="secondary" onClick={() => handleExportPDF(event)} className="gap-1"><FileDown className="h-4 w-4" />Export Applicants</Button>
                   </div>
                 </div>
               </CardHeader>
@@ -566,6 +709,9 @@ export function AdminEvents() {
                       { label: 'Created By', value: getCreatorDisplay(selectedEvent) },
                       { label: 'Created At', value: formatCreatedAt(selectedEvent.created_at) || '—' },
                       { label: 'Team', value: selectedEvent.team_name || '—' },
+                      { label: 'Laboratory', value: selectedEvent.laboratory || '—' },
+                      { label: 'Reviewers', value: selectedEvent.reviewers?.join(', ') || '—' },
+                      { label: 'Organizers', value: selectedEvent.organizers?.join(', ') || '—' },
                     ].map(({ label, value }) => (
                       <div key={label}><p className="text-xs text-muted-foreground mb-1">{label}</p><p className="font-medium">{value}</p></div>
                     ))}
@@ -574,7 +720,12 @@ export function AdminEvents() {
                 </div>
               </ScrollArea>
               <DialogFooter>
-                <Button size="sm" variant="secondary" onClick={() => exportEventApplicantsPDF(selectedEvent)} className="gap-1 mr-auto"><FileDown className="h-4 w-4" />Export PDF</Button>
+                {selectedEvent.has_pdf && (
+                  <a href={`/api/events/pdf?id=${selectedEvent.id}`} target="_blank" rel="noopener noreferrer" className="mr-auto">
+                    <Button size="sm" variant="secondary" className="gap-1 bg-blue-50 text-blue-700 border-blue-100 hover:bg-blue-100"><Eye className="h-4 w-4" />View Proof</Button>
+                  </a>
+                )}
+                <Button size="sm" variant="secondary" onClick={() => handleExportPDF(selectedEvent)} className="gap-1"><FileDown className="h-4 w-4" />Export Applicants</Button>
                 <Button variant="outline" onClick={() => setSelectedEvent(null)}>Close</Button>
               </DialogFooter>
             </>

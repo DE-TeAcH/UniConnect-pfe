@@ -77,14 +77,17 @@ export function PublicDashboard() {
         });
     };
 
-    const handleVisitWebsite = (url?: string) => {
-        requireLogin(() => {
-            if (url) {
-                window.open(url, '_blank');
-            } else {
-                toast.info('No website link available.');
+    const handleVisitWebsite = async (eventId: string, url?: string) => {
+        if (url) {
+            try {
+                await api.eventRedirects.create({ event_id: String(eventId), user_id: user ? String(user.id) : undefined });
+            } catch (err) {
+                console.error('Failed to log redirect', err);
             }
-        });
+            window.open(url, '_blank');
+        } else {
+            toast.info('No website link available.');
+        }
     };
 
     const toggleSave = (eventId: string) => {
@@ -502,7 +505,7 @@ export function PublicDashboard() {
                                     {savedEventIds?.includes(selectedEvent.id) ? 'Saved' : 'Save Event'}
                                 </Button>
                                 {selectedEvent.is_paid ? (
-                                    <Button disabled={!isEventActive(selectedEvent)} onClick={() => handleVisitWebsite(selectedEvent.join_url)}>
+                                    <Button disabled={!isEventActive(selectedEvent)} onClick={() => handleVisitWebsite(selectedEvent.id, selectedEvent.join_url)}>
                                         {!isEventActive(selectedEvent) ? 'Too late' : <><ArrowUpRight className="h-4 w-4 mr-2" /> Visit Registration Website</>}
                                     </Button>
                                 ) : (

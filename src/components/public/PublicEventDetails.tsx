@@ -7,7 +7,7 @@ import { Calendar, MapPin, User, Users, ArrowLeft, Building, Presentation } from
 import { toast } from 'sonner';
 
 export function PublicEventDetails() {
-    const { requireLogin, applyToEvent, appliedEventIds, currentEntityId, navigateTo } = usePublicStore();
+    const { user, requireLogin, applyToEvent, appliedEventIds, currentEntityId, navigateTo } = usePublicStore();
     const [event, setEvent] = useState<any | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -49,14 +49,17 @@ export function PublicEventDetails() {
         });
     };
 
-    const handleVisitWebsite = () => {
-        requireLogin(() => {
-            if (event.join_url) {
-                window.open(event.join_url, '_blank');
-            } else {
-                toast.info('No website link available.');
+    const handleVisitWebsite = async () => {
+        if (event.join_url) {
+            try {
+                await api.eventRedirects.create({ event_id: String(event.id), user_id: user ? String(user.id) : undefined });
+            } catch (err) {
+                console.error('Failed to log redirect', err);
             }
-        });
+            window.open(event.join_url, '_blank');
+        } else {
+            toast.info('No website link available.');
+        }
     };
 
     return (
