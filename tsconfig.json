@@ -25,7 +25,8 @@
   },
   "include": [
     "src",
-    "pages"
+    "pages",
+    "api"
   ],
   "exclude": [
     "node_modules"
