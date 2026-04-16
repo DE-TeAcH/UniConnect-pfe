@@ -1,6 +1,27 @@
 {
-  "outputDirectory": "build",
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/index.ts",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "build"
+      }
+    }
+  ],
   "routes": [
+    {
+      "src": "/api$",
+      "dest": "/api"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/api?path=$1"
+    },
     {
       "handle": "filesystem"
     },

@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import { api } from '../../services/api';
 
 export function PublicSettings() {
-    const { user, requireLogin, login } = usePublicStore();
+    const { user, requireLogin, login, logout } = usePublicStore();
 
     // User must be logged in to view 
     if (!user) {

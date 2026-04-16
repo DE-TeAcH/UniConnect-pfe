@@ -48,7 +48,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         sendResponse(res, true, 'User updated');
     } catch (err: any) {
         console.error('Update user error:', err);
-        require('fs').writeFileSync('api-err.log', err.stack || err.message || String(err));
         sendResponse(res, false, 'Internal server error', null, 500);
     }
 }
