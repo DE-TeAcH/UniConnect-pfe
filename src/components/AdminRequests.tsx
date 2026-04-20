@@ -3,12 +3,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { Check, X, Calendar, Clock, MapPin, Users, Building2, RefreshCw } from 'lucide-react';
+import { Check, X, Calendar, Clock, MapPin, Users, Building2, RefreshCw, Loader2 } from 'lucide-react';
 import { api } from '../services/api';
 
 export function AdminRequests() {
   const [requests, setRequests] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [updatingIds, setUpdatingIds] = useState<Record<number, boolean>>({});
 
   const fetchRequests = async () => {
     setIsLoading(true);
@@ -32,12 +33,15 @@ export function AdminRequests() {
 
   const handleStatusUpdate = async (id: number, status: 'active' | 'rejected') => {
     try {
+      setUpdatingIds(prev => ({ ...prev, [id]: true }));
       const response = await api.events.update({ id, status });
       if (response.success) {
         fetchRequests();
       }
     } catch (error) {
       console.error('Failed to update status', error);
+    } finally {
+      setUpdatingIds(prev => ({ ...prev, [id]: false }));
     }
   };
 
@@ -139,8 +143,9 @@ export function AdminRequests() {
                       className="text-red-600 hover:text-red-700 hover:bg-red-50"
                       style={{ fontWeight: '500' }}
                       onClick={() => handleStatusUpdate(request.id, 'rejected')}
+                      disabled={updatingIds[request.id]}
                     >
-                      <X className="h-4 w-4" style={{ marginRight: '4px' }} />
+                      {updatingIds[request.id] ? <Loader2 className="h-4 w-4 animate-spin" style={{ marginRight: '4px' }} /> : <X className="h-4 w-4" style={{ marginRight: '4px' }} />}
                       Reject
                     </Button>
                     <Button
@@ -148,8 +153,9 @@ export function AdminRequests() {
                       className="bg-green-50 text-green-700 hover:bg-green-100 border border-green-200"
                       style={{ fontWeight: '500' }}
                       onClick={() => handleStatusUpdate(request.id, 'active')}
+                      disabled={updatingIds[request.id]}
                     >
-                      <Check className="h-4 w-4" style={{ marginRight: '4px' }} />
+                      {updatingIds[request.id] ? <Loader2 className="h-4 w-4 animate-spin" style={{ marginRight: '4px' }} /> : <Check className="h-4 w-4" style={{ marginRight: '4px' }} />}
                       Approve
                     </Button>
                   </div>

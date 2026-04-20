@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { ArrowLeft, MapPin, Mail, BookOpen, Users, Calendar, Heart, User, ArrowUpRight, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, MapPin, Mail, BookOpen, Users, Calendar, Heart, User, ArrowUpRight, CheckCircle2, Building, Loader2 } from 'lucide-react';
 import { usePublicStore } from '../../contexts/PublicStoreContext';
 import { api } from '../../services/api';
 import { toast } from 'sonner';
@@ -67,46 +67,70 @@ export function PublicCreatorProfile() {
         sortedDisplayEvents.unshift(mostAttendedEvent);
     }
 
+    const [loadingFollow, setLoadingFollow] = useState(false);
+    const [loadingActions, setLoadingActions] = useState<Record<string, boolean>>({});
+
     const handleFollow = () => {
-        requireLogin(() => {
-            if (isFollowing) {
-                unfollowCreator(creator.id);
-                toast.info('Unfollowed creator');
-            } else {
-                followCreator(creator.id);
-                toast.success('Following creator');
+        requireLogin(async () => {
+            setLoadingFollow(true);
+            try {
+                if (isFollowing) {
+                    await unfollowCreator(creator.id);
+                    toast.info('Unfollowed creator');
+                } else {
+                    await followCreator(creator.id);
+                    toast.success('Following creator');
+                }
+            } catch (err) {
+            } finally {
+                setLoadingFollow(false);
             }
         });
     };
 
     const handleApply = (eventId: string | number) => {
-        requireLogin(() => {
-            applyToEvent(eventId);
-            toast.success('Successfully applied to event!');
+        requireLogin(async () => {
+            setLoadingActions(prev => ({...prev, [eventId]: true}));
+            try {
+                await applyToEvent(eventId);
+                toast.success('Successfully applied to event!');
+            } catch (err) {
+            } finally {
+                setLoadingActions(prev => ({...prev, [eventId]: false}));
+            }
         });
     };
 
     const handleVisitWebsite = async (eventId: string, url?: string) => {
         if (url) {
+            setLoadingActions(prev => ({...prev, [eventId]: true}));
             try {
                 await api.eventRedirects.create({ event_id: String(eventId), user_id: user ? String(user.id) : undefined });
+                window.open(url, '_blank');
             } catch (err) {
                 console.error('Failed to log redirect', err);
+            } finally {
+                setLoadingActions(prev => ({...prev, [eventId]: false}));
             }
-            window.open(url, '_blank');
         } else {
             toast.info('No website link available.');
         }
     };
 
     const toggleSave = (eventId: string | number) => {
-        requireLogin(() => {
-            if (savedEventIds.includes(eventId)) {
-                unsaveEvent(eventId);
-                toast.success('Removed from favorites.');
-            } else {
-                saveEvent(eventId);
-                toast.success('Added to favorites.');
+        requireLogin(async () => {
+            setLoadingActions(prev => ({...prev, [eventId]: true}));
+            try {
+                if (savedEventIds.includes(eventId)) {
+                    await unsaveEvent(eventId);
+                    toast.success('Removed from favorites.');
+                } else {
+                    await saveEvent(eventId);
+                    toast.success('Added to favorites.');
+                }
+            } catch (err) {
+            } finally {
+                setLoadingActions(prev => ({...prev, [eventId]: false}));
             }
         });
     };
@@ -197,10 +221,12 @@ export function PublicCreatorProfile() {
                                 {!isSelf && (
                                     <Button
                                         size="lg"
+                                        disabled={loadingFollow}
                                         className="w-full md:w-auto rounded-full px-8 shadow-sm"
                                         variant={isFollowing ? "secondary" : "default"}
                                         onClick={handleFollow}
                                     >
+                                        {loadingFollow ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                                         {isFollowing ? 'Following' : 'Follow'}
                                     </Button>
                                 )}
@@ -380,10 +406,17 @@ export function PublicCreatorProfile() {
                                             <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Location</p>
                                             <p className="font-medium flex items-center gap-2"><MapPin className="h-4 w-4 text-muted-foreground" /> {selectedEvent.location}</p>
                                         </div>
-                                        <div>
+                                        <div className="col-span-2 sm:col-span-1">
                                             <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Date & Time</p>
-                                            <p className="font-medium flex flex-col gap-1">
-                                                <span className="flex items-center gap-2"><Calendar className="h-4 w-4 text-muted-foreground" /> {formatDate(selectedEvent.start_date)} • {selectedEvent.start_time}</span>
+                                            <p className="font-medium flex flex-col gap-1.5 text-sm">
+                                                <span className="flex items-center gap-2">
+                                                    <Calendar className="h-4 w-4 text-muted-foreground shrink-0" /> 
+                                                    Start: {formatDate(selectedEvent.start_date)} {selectedEvent.start_time ? `at ${selectedEvent.start_time}` : ''}
+                                                </span>
+                                                <span className="flex items-center gap-2">
+                                                    <Calendar className="h-4 w-4 text-transparent shrink-0" /> 
+                                                    End: {formatDate(selectedEvent.end_date)} {selectedEvent.end_time ? `at ${selectedEvent.end_time}` : ''}
+                                                </span>
                                             </p>
                                         </div>
                                         <div>
@@ -411,25 +444,53 @@ export function PublicCreatorProfile() {
                                                 </p>
                                             </div>
                                         )}
+                                        
+                                        {selectedEvent.uni_exclusive && (
+                                            <>
+                                                <div className="col-span-2 sm:col-span-1">
+                                                    <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Responsible Lab</p>
+                                                    <p className="font-medium flex items-center gap-2">
+                                                        <Building className="h-4 w-4 text-muted-foreground" /> {selectedEvent.laboratory || '—'}
+                                                    </p>
+                                                </div>
+                                                {(selectedEvent.organizers?.length > 0 || selectedEvent.reviewers?.length > 0) && (
+                                                    <div className="col-span-2">
+                                                        <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider font-semibold">Supervisors</p>
+                                                        <div className="grid sm:grid-cols-2 gap-2">
+                                                            {selectedEvent.organizers?.map((org: string, i: number) => (
+                                                                <p key={`org-${i}`} className="font-medium flex items-center gap-2 text-sm bg-muted/40 p-2 rounded-md border text-foreground/90">
+                                                                    <User className="h-4 w-4 text-muted-foreground shrink-0" /> {org} <Badge variant="secondary" className="ml-auto text-[10px] shrink-0">Organizer</Badge>
+                                                                </p>
+                                                            ))}
+                                                            {selectedEvent.reviewers?.map((rev: string, i: number) => (
+                                                                <p key={`rev-${i}`} className="font-medium flex items-center gap-2 text-sm bg-muted/40 p-2 rounded-md border text-foreground/90">
+                                                                    <User className="h-4 w-4 text-muted-foreground shrink-0" /> {rev} <Badge variant="secondary" className="ml-auto text-[10px] shrink-0">Reviewer</Badge>
+                                                                </p>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             </ScrollArea>
                             <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-4 pt-4 border-t">
-                                <Button variant="outline" className="sm:mr-auto" onClick={() => toggleSave(selectedEvent.id)}>
-                                    <Heart className={`h-4 w-4 mr-2 ${savedEventIds.includes(selectedEvent.id) ? 'fill-red-500 text-red-500' : ''}`} />
+                                <Button disabled={loadingActions[selectedEvent.id]} variant="outline" className="sm:mr-auto" onClick={() => toggleSave(selectedEvent.id)}>
+                                    {loadingActions[selectedEvent.id] ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Heart className={`h-4 w-4 mr-2 ${savedEventIds.includes(selectedEvent.id) ? 'fill-red-500 text-red-500' : ''}`} />}
                                     {savedEventIds.includes(selectedEvent.id) ? 'Saved' : 'Save Event'}
                                 </Button>
                                 {selectedEvent.is_paid ? (
-                                    <Button disabled={!isEventActive(selectedEvent)} onClick={() => handleVisitWebsite(selectedEvent.id, selectedEvent.join_url)}>
-                                        {!isEventActive(selectedEvent) ? 'Too late' : <><ArrowUpRight className="h-4 w-4 mr-2" /> Visit Registration Website</>}
+                                    <Button disabled={loadingActions[selectedEvent.id] || !isEventActive(selectedEvent)} onClick={() => handleVisitWebsite(selectedEvent.id, selectedEvent.join_url)}>
+                                        {loadingActions[selectedEvent.id] ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : !isEventActive(selectedEvent) ? 'Too late' : <><ArrowUpRight className="h-4 w-4 mr-2" /> Visit Registration Website</>}
                                     </Button>
                                 ) : (
                                     <Button
-                                        disabled={appliedEventIds.includes(selectedEvent.id) || !isEventActive(selectedEvent) || (!!selectedEvent.max_seats && (selectedEvent.registration_count || 0) >= selectedEvent.max_seats)}
+                                        disabled={loadingActions[selectedEvent.id] || appliedEventIds.includes(selectedEvent.id) || !isEventActive(selectedEvent) || (!!selectedEvent.max_seats && (selectedEvent.registration_count || 0) >= selectedEvent.max_seats)}
                                         onClick={() => handleApply(selectedEvent.id)}
                                         className={appliedEventIds.includes(selectedEvent.id) ? "bg-green-600 hover:bg-green-700 opacity-100 text-white" : ""}
                                     >
-                                        {!isEventActive(selectedEvent) ? (
+                                        {loadingActions[selectedEvent.id] ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : !isEventActive(selectedEvent) ? (
                                             'Too late'
                                         ) : appliedEventIds.includes(selectedEvent.id) ? (
                                             <><CheckCircle2 className="h-4 w-4 mr-2" /> Applied</>

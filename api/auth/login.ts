@@ -22,9 +22,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             `SELECT u.*, t.name AS team_name
              FROM users u
              LEFT JOIN teams t ON u.team_id = t.id
-             WHERE u.username = ?
+             WHERE u.username = ? OR u.email = ?
              LIMIT 1`,
-            [username]
+            [username, username]
         );
 
         if (!rows.length) {

@@ -100,7 +100,8 @@ export function Sidebar({ currentPage, userRole, onNavigate, onClose, onLogout, 
         <ul className="space-y-2">
           {items.map((item) => {
             const ItemIcon = item.icon;
-            const isActive = currentPage === item.id;
+            const isActive = currentPage === item.id
+              || (item.id === 'creators' && currentPage === 'creator-profile');
 
             return (
               <li key={item.id}>

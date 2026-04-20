@@ -3,12 +3,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Input } from '../ui/input';
-import { Calendar, MapPin, CheckCircle2, Clock, Search } from 'lucide-react';
+import { Calendar, MapPin, CheckCircle2, Clock, Search, Heart, User, Users, ArrowUpRight, Building, Loader2 } from 'lucide-react';
 import { usePublicStore } from '../../contexts/PublicStoreContext';
 import { api } from '../../services/api';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
+import { ScrollArea } from '../ui/scroll-area';
+import { Separator } from '../ui/separator';
+import { toast } from 'sonner';
 
 export function PublicHistory() {
-    const { user, appliedEventIds, savedEventIds, navigateTo } = usePublicStore();
+    const { user, appliedEventIds, savedEventIds, navigateTo, requireLogin, applyToEvent, saveEvent, unsaveEvent } = usePublicStore();
 
     const [allEvents, setAllEvents] = useState<any[]>([]);
     const [viewMode, setViewMode] = useState<'all' | 'favorites' | 'applied' | 'visited'>('all');
@@ -18,6 +22,8 @@ export function PublicHistory() {
     const [paymentType, setPaymentType] = useState<string>('All');
     const [eventStatus, setEventStatus] = useState<string>('All');
     const [sortBy, setSortBy] = useState<string>('Most Attended');
+
+    const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
 
     useEffect(() => {
         const fetchEvents = async () => {
@@ -57,6 +63,65 @@ export function PublicHistory() {
         if (now > endDate) return 'completed';
         if (now >= startDate && now <= endDate) return 'active';
         return 'upcoming';
+    };
+
+    const [loadingActions, setLoadingActions] = useState<Record<string, boolean>>({});
+
+    const toggleSave = (eventId: string) => {
+        requireLogin(async () => {
+            setLoadingActions(prev => ({...prev, [eventId]: true}));
+            try {
+                if (savedEventIds.includes(eventId)) {
+                    await unsaveEvent(eventId);
+                    toast.success('Removed from favorites.');
+                } else {
+                    await saveEvent(eventId);
+                    toast.success('Added to favorites.');
+                }
+            } catch (err) {
+            } finally {
+                setLoadingActions(prev => ({...prev, [eventId]: false}));
+            }
+        });
+    };
+
+    const handleApply = (eventId: string) => {
+        requireLogin(async () => {
+            setLoadingActions(prev => ({...prev, [eventId]: true}));
+            try {
+                await applyToEvent(eventId);
+                toast.success('Successfully applied to event!');
+            } catch (err) {
+            } finally {
+                setLoadingActions(prev => ({...prev, [eventId]: false}));
+            }
+        });
+    };
+
+    const handleVisitWebsite = async (eventId: string, url?: string) => {
+        if (url) {
+            setLoadingActions(prev => ({...prev, [eventId]: true}));
+            try {
+                await api.eventRedirects.create({ event_id: String(eventId), user_id: user ? String(user.id) : undefined });
+                window.open(url, '_blank');
+            } catch (err) {
+                console.error('Failed to log redirect', err);
+            } finally {
+                setLoadingActions(prev => ({...prev, [eventId]: false}));
+            }
+        } else {
+            toast.info('No website link available.');
+        }
+    };
+
+    const formatDate = (dateStr: string) => {
+        return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    };
+
+    const isEventActive = (event: any) => {
+        const ed = toDateOnly(event.end_date);
+        const eventEndDateTime = new Date(`${ed}T${event.end_time || '23:59:59'}`);
+        return eventEndDateTime >= new Date();
     };
 
     const historyEvents = useMemo(() => {
@@ -156,7 +221,7 @@ export function PublicHistory() {
                         </div>
 
                         <div className="flex flex-col justify-center gap-3 border-l pl-0 md:pl-6 min-w-[140px]">
-                            <Button variant="outline" className="w-full" onClick={() => navigateTo('event-details', event.id)}>
+                            <Button variant="outline" className="w-full" onClick={() => setSelectedEvent(event)}>
                                 View Details
                             </Button>
                             {isApplied ? (
@@ -239,6 +304,142 @@ export function PublicHistory() {
                     )}
                 </div>
             </div>
+
+            {/* Event Detail Modal */}
+            <Dialog open={selectedEvent !== null} onOpenChange={(open) => !open && setSelectedEvent(null)}>
+                <DialogContent className="sm:max-w-[620px] max-h-[85vh]">
+                    {selectedEvent && (
+                        <>
+                            <DialogHeader>
+                                <div className="flex items-center justify-between gap-2">
+                                    <DialogTitle className="text-2xl pr-8 line-clamp-2 leading-tight">{selectedEvent.title}</DialogTitle>
+                                </div>
+                                <div className="flex gap-2 pt-2">
+                                    <Badge variant="outline">{selectedEvent.category_name}</Badge>
+                                    {selectedEvent.is_paid ?
+                                        <Badge variant="outline" className="text-emerald-700 border-emerald-200 bg-emerald-50">PAID</Badge> :
+                                        <Badge variant="secondary" className="bg-primary/10 text-primary">FREE</Badge>
+                                    }
+                                </div>
+                            </DialogHeader>
+                            <ScrollArea className="max-h-[50vh] pr-4 mt-2">
+                                <div className="space-y-6 text-sm">
+                                    <div>
+                                        <h3 className="font-semibold text-base mb-2">About this event</h3>
+                                        <p className="text-muted-foreground leading-relaxed">
+                                            {selectedEvent.description || 'No detailed description provided for this event.'}
+                                        </p>
+                                    </div>
+                                    <Separator />
+                                    <div className="grid grid-cols-2 gap-y-6 gap-x-4">
+                                        <div>
+                                            <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Creator</p>
+                                            <p className="font-medium flex items-center gap-2"><User className="h-4 w-4 text-muted-foreground" /> {selectedEvent.creator_name || '—'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Location</p>
+                                            <p className="font-medium flex items-center gap-2"><MapPin className="h-4 w-4 text-muted-foreground" /> {selectedEvent.location}</p>
+                                        </div>
+                                        <div className="col-span-2 sm:col-span-1">
+                                            <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Date & Time</p>
+                                            <p className="font-medium flex flex-col gap-1.5 text-sm">
+                                                <span className="flex items-center gap-2">
+                                                    <Calendar className="h-4 w-4 text-muted-foreground shrink-0" /> 
+                                                    Start: {formatDate(selectedEvent.start_date)} {selectedEvent.start_time ? `at ${selectedEvent.start_time}` : ''}
+                                                </span>
+                                                <span className="flex items-center gap-2">
+                                                    <Calendar className="h-4 w-4 text-transparent shrink-0" /> 
+                                                    End: {formatDate(selectedEvent.end_date)} {selectedEvent.end_time ? `at ${selectedEvent.end_time}` : ''}
+                                                </span>
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Registration</p>
+                                            <p className="font-medium">
+                                                {selectedEvent.is_paid ? `Paid (${selectedEvent.price} DZD)` : 'Free entry'}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Created By</p>
+                                            <p className="font-medium">{selectedEvent.creator_name || '—'}</p>
+                                        </div>
+                                        {selectedEvent.is_paid ? (
+                                            <div>
+                                                <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Capacity</p>
+                                                <p className="font-medium flex items-center gap-2">
+                                                    <Users className="h-4 w-4 text-muted-foreground" /> Max: {selectedEvent.max_seats || 'Unlimited'}
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <div>
+                                                <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Registrations</p>
+                                                <p className="font-medium flex items-center gap-2">
+                                                    <Users className="h-4 w-4 text-muted-foreground" /> {selectedEvent.registration_count || 0}{selectedEvent.max_seats ? ` / ${selectedEvent.max_seats}` : ''} Registered
+                                                </p>
+                                            </div>
+                                        )}
+                                        
+                                        {selectedEvent.uni_exclusive && (
+                                            <>
+                                                <div className="col-span-2 sm:col-span-1">
+                                                    <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Responsible Lab</p>
+                                                    <p className="font-medium flex items-center gap-2">
+                                                        <Building className="h-4 w-4 text-muted-foreground" /> {selectedEvent.laboratory || '—'}
+                                                    </p>
+                                                </div>
+                                                {(selectedEvent.organizers?.length > 0 || selectedEvent.reviewers?.length > 0) && (
+                                                    <div className="col-span-2">
+                                                        <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider font-semibold">Supervisors</p>
+                                                        <div className="grid sm:grid-cols-2 gap-2">
+                                                            {selectedEvent.organizers?.map((org: string, i: number) => (
+                                                                <p key={`org-${i}`} className="font-medium flex items-center gap-2 text-sm bg-muted/40 p-2 rounded-md border text-foreground/90">
+                                                                    <User className="h-4 w-4 text-muted-foreground shrink-0" /> {org} <Badge variant="secondary" className="ml-auto text-[10px] shrink-0">Organizer</Badge>
+                                                                </p>
+                                                            ))}
+                                                            {selectedEvent.reviewers?.map((rev: string, i: number) => (
+                                                                <p key={`rev-${i}`} className="font-medium flex items-center gap-2 text-sm bg-muted/40 p-2 rounded-md border text-foreground/90">
+                                                                    <User className="h-4 w-4 text-muted-foreground shrink-0" /> {rev} <Badge variant="secondary" className="ml-auto text-[10px] shrink-0">Reviewer</Badge>
+                                                                </p>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            </ScrollArea>
+                            <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-4 pt-4 border-t">
+                                <Button disabled={loadingActions[selectedEvent.id]} variant="outline" className="sm:mr-auto" onClick={() => toggleSave(selectedEvent.id)}>
+                                    {loadingActions[selectedEvent.id] ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Heart className={`h-4 w-4 mr-2 ${savedEventIds.includes(selectedEvent.id) ? 'fill-red-500 text-red-500' : ''}`} />}
+                                    {savedEventIds.includes(selectedEvent.id) ? 'Saved' : 'Save Event'}
+                                </Button>
+                                {selectedEvent.is_paid ? (
+                                    <Button disabled={loadingActions[selectedEvent.id] || !isEventActive(selectedEvent)} onClick={() => handleVisitWebsite(selectedEvent.id, selectedEvent.join_url)}>
+                                        {loadingActions[selectedEvent.id] ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : !isEventActive(selectedEvent) ? 'Too late' : <><ArrowUpRight className="h-4 w-4 mr-2" /> Visit Registration Website</>}
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        disabled={loadingActions[selectedEvent.id] || appliedEventIds.includes(selectedEvent.id) || !isEventActive(selectedEvent) || (!!selectedEvent.max_seats && (selectedEvent.registration_count || 0) >= selectedEvent.max_seats)}
+                                        onClick={() => handleApply(selectedEvent.id)}
+                                        className={appliedEventIds.includes(selectedEvent.id) ? "bg-green-600 hover:bg-green-700 opacity-100 text-white" : ""}
+                                    >
+                                        {loadingActions[selectedEvent.id] ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : !isEventActive(selectedEvent) ? (
+                                            'Too late'
+                                        ) : appliedEventIds.includes(selectedEvent.id) ? (
+                                            <><CheckCircle2 className="h-4 w-4 mr-2" /> Applied</>
+                                        ) : !!selectedEvent.max_seats && (selectedEvent.registration_count || 0) >= selectedEvent.max_seats ? (
+                                            'Event Full'
+                                        ) : (
+                                            'Apply Now'
+                                        )}
+                                    </Button>
+                                )}
+                            </DialogFooter>
+                        </>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

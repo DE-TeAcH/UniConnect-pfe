@@ -1,14 +1,22 @@
 import nodemailer from 'nodemailer';
 
+const emailUser = process.env.EMAIL_USER;
+const emailPass = process.env.EMAIL_PASS;
+const emailFrom = process.env.EMAIL_FROM || emailUser;
+
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: 'project.uniconnect@gmail.com',
-        pass: 'zcpl abvb bhxv cthl',
+        user: emailUser,
+        pass: emailPass,
     },
 });
 
 export async function sendPinEmail(to: string, pin: string, purpose: 'register' | 'reset') {
+    if (!emailUser || !emailPass || !emailFrom) {
+        throw new Error('Email credentials are not configured');
+    }
+
     const subject = purpose === 'register'
         ? 'UniConnect - Verify Your Email'
         : 'UniConnect - Password Reset PIN';
@@ -40,7 +48,7 @@ export async function sendPinEmail(to: string, pin: string, purpose: 'register' 
     </div>`;
 
     await transporter.sendMail({
-        from: '"UniConnect" <project.uniconnect@gmail.com>',
+        from: `"UniConnect" <${emailFrom}>`,
         to,
         subject,
         html,

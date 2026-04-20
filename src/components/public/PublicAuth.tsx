@@ -493,7 +493,7 @@ export function PublicAuth() {
                                                     <span className="bg-card px-2 text-muted-foreground">Or</span>
                                                 </div>
                                             </div>
-                                            <Button variant="outline" className="w-full" type="button" onClick={handleGuestAccess}>
+                                            <Button variant="outline" className="w-full" disabled={isLoading} type="button" onClick={handleGuestAccess}>
                                                 Continue as Guest <ArrowRight className="w-4 h-4 ml-2" />
                                             </Button>
                                         </>
@@ -512,7 +512,7 @@ export function PublicAuth() {
                                                 <Label htmlFor="register-name">Full Name</Label>
                                                 <Input
                                                     id="register-name"
-                                                    placeholder="John Doe"
+                                                    placeholder="Full Name"
                                                     value={registerName}
                                                     onChange={(e) => setRegisterName(e.target.value)}
                                                     required
@@ -686,7 +686,7 @@ export function PublicAuth() {
                                             <span className="bg-card px-2 text-muted-foreground">Or</span>
                                         </div>
                                     </div>
-                                    <Button variant="outline" className="w-full" type="button" onClick={handleGuestAccess}>
+                                    <Button variant="outline" className="w-full" disabled={isLoading} type="button" onClick={handleGuestAccess}>
                                         Continue as Guest <ArrowRight className="w-4 h-4 ml-2" />
                                     </Button>
                                 </CardFooter>

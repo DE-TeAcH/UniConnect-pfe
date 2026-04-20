@@ -11,7 +11,7 @@ import { Separator } from './ui/separator';
 import { Switch } from './ui/switch';
 import {
   Calendar, MapPin, Mic, Users, Plus, Trash2, Eye, ChevronDown, ChevronUp,
-  Link, FileDown, ShieldCheck, FolderOpen, Pencil, Check, X, ArrowUpDown, ArrowUp, ArrowDown
+  Link, FileDown, ShieldCheck, FolderOpen, Pencil, Check, X, ArrowUpDown, ArrowUp, ArrowDown, Loader2
 } from 'lucide-react';
 import { api } from '../services/api';
 import { exportEventApplicantsPDF } from '../utils/pdfExport';
@@ -77,6 +77,13 @@ export function AdminEvents() {
   const [newCatExclusive, setNewCatExclusive] = useState(false);
   const [editingCat, setEditingCat] = useState<{ id: string; val: string; exclusive: boolean } | null>(null);
 
+  // Loading States
+  const [isSaving, setIsSaving] = useState(false);
+  const [loadingActionIds, setLoadingActionIds] = useState<Record<string, boolean>>({});
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [isSavingCategory, setIsSavingCategory] = useState(false);
+  const [isExportingMap, setIsExportingMap] = useState<Record<string, boolean>>({});
+
   // Filters
   const [statusFilter, setStatusFilter] = useState<'all' | 'upcoming' | 'completed'>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -92,6 +99,7 @@ export function AdminEvents() {
   const addCategory = async () => {
     const name = newCatName.trim();
     if (!name || categories.some(c => c.name === name)) return;
+    setIsAddingCategory(true);
     try {
       const res = await api.eventCategories.create({ name, uni_exclusive: newCatExclusive });
       if (res.success) {
@@ -101,10 +109,12 @@ export function AdminEvents() {
         setNewCatExclusive(false);
       } else toast.error(res.message);
     } catch (e) { toast.error('Server error'); }
+    finally { setIsAddingCategory(false); }
   };
 
   const deleteCategory = async (id: string) => {
     if (!confirm('Delete this category?')) return;
+    setLoadingActionIds(p => ({...p, [`delCat_${id}`]: true}));
     try {
       const res = await api.eventCategories.delete(id);
       if (res.success) {
@@ -112,12 +122,14 @@ export function AdminEvents() {
         fetchCategories();
       } else toast.error(res.message);
     } catch (e) { toast.error('Server error'); }
+    finally { setLoadingActionIds(p => ({...p, [`delCat_${id}`]: false})); }
   };
 
   const saveEditCat = async () => {
     if (!editingCat) return;
     const name = editingCat.val.trim();
     if (!name) return;
+    setIsSavingCategory(true);
     try {
       const res = await api.eventCategories.update({ id: editingCat.id, name, uni_exclusive: editingCat.exclusive });
       if (res.success) {
@@ -126,6 +138,7 @@ export function AdminEvents() {
         setEditingCat(null);
       } else toast.error(res.message);
     } catch (e) { toast.error('Server error'); }
+    finally { setIsSavingCategory(false); }
   };
 
   const formatDate = (d: string) => {
@@ -170,6 +183,7 @@ export function AdminEvents() {
       toast.error('End time cannot be before start time.');
       return;
     }
+    setIsSaving(true);
     try {
       const payload = {
         title: form.title,
@@ -193,10 +207,11 @@ export function AdminEvents() {
         toast.success('Event updated.');
       }
       await fetchEvents();
+      setIsOpen(false);
+      setForm(emptyForm());
+      setEditingId(null);
     } catch (e) { toast.error('Failed to save event.'); }
-    setIsOpen(false);
-    setForm(emptyForm());
-    setEditingId(null);
+    finally { setIsSaving(false); }
   };
 
   const handleEdit = (e: any) => {
@@ -214,6 +229,7 @@ export function AdminEvents() {
   };
 
   const handleExportPDF = async (event: any) => {
+    setIsExportingMap(p => ({...p, [event.id]: true}));
     try {
       const toastId = toast.loading('Fetching applicants...');
       let applicants: any[] = [];
@@ -228,16 +244,20 @@ export function AdminEvents() {
       exportEventApplicantsPDF(event, applicants);
     } catch (e) {
       toast.error('Failed to fetch applicants for PDF');
+    } finally {
+      setIsExportingMap(p => ({...p, [event.id]: false}));
     }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this event?')) return;
+    setLoadingActionIds(p => ({...p, [`del_${id}`]: true}));
     try {
       await api.events.delete(id);
       await fetchEvents();
       toast.success('Event deleted.');
     } catch (e) { toast.error('Failed to delete event.'); }
+    finally { setLoadingActionIds(p => ({...p, [`del_${id}`]: false})); }
   };
 
   const toggle = (id: string) => setExpanded(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
@@ -472,7 +492,8 @@ export function AdminEvents() {
               </ScrollArea>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-                <Button onClick={handleSave} className="bg-gradient-to-br from-blue-600 to-purple-700 text-white border-0">
+                <Button disabled={isSaving} onClick={handleSave} className="bg-gradient-to-br from-blue-600 to-purple-700 text-white border-0">
+                  {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                   Save Changes
                 </Button>
               </DialogFooter>
@@ -502,8 +523,8 @@ export function AdminEvents() {
                 <Switch checked={newCatExclusive} onCheckedChange={setNewCatExclusive} />
                 <span className="text-xs text-muted-foreground mr-1">Exclusive</span>
               </div>
-              <Button size="sm" onClick={addCategory} disabled={!newCatName.trim()}>
-                <Plus className="h-4 w-4 mr-1" />Add
+              <Button size="sm" onClick={addCategory} disabled={!newCatName.trim() || isAddingCategory}>
+                {isAddingCategory ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />}Add
               </Button>
             </div>
             <Separator />
@@ -524,8 +545,12 @@ export function AdminEvents() {
                         <div className="flex items-center gap-1 bg-background px-1.5 py-1 rounded border">
                           <Switch className="scale-75" checked={editingCat.exclusive} onCheckedChange={v => setEditingCat(p => p ? { ...p, exclusive: v } : null)} />
                         </div>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-green-600" onClick={saveEditCat}><Check className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => setEditingCat(null)}><X className="h-4 w-4" /></Button>
+                        <Button disabled={isSavingCategory} variant="ghost" size="icon" className="h-7 w-7 text-green-600" onClick={saveEditCat}>
+                          {isSavingCategory ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                        </Button>
+                        <Button disabled={isSavingCategory} variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => setEditingCat(null)}>
+                          <X className="h-4 w-4" />
+                        </Button>
                       </>
                     ) : (
                       <>
@@ -536,8 +561,8 @@ export function AdminEvents() {
                         <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary transition-colors" onClick={() => setEditingCat({ id: cat.id, val: cat.name, exclusive: cat.uni_exclusive })}>
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 transition-colors" onClick={() => deleteCategory(cat.id)}>
-                          <Trash2 className="h-4 w-4" />
+                        <Button disabled={loadingActionIds[`delCat_${cat.id}`]} variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 transition-colors" onClick={() => deleteCategory(cat.id)}>
+                          {loadingActionIds[`delCat_${cat.id}`] ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                         </Button>
                       </>
                     )}
@@ -648,13 +673,17 @@ export function AdminEvents() {
                     <Button variant="outline" size="sm" onClick={() => toggle(event.id)}>{isExp ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</Button>
                     <Button variant="outline" size="sm" onClick={() => setSelectedEvent(event)}><Eye className="h-4 w-4" /></Button>
                     <Button variant="outline" size="sm" onClick={() => handleEdit(event)}>Edit</Button>
-                    <Button variant="ghost" size="icon" className="text-gray-400 hover:text-red-600 hover:bg-red-50" onClick={() => handleDelete(event.id)}><Trash2 className="h-4 w-4" /></Button>
+                    <Button disabled={loadingActionIds[`del_${event.id}`]} variant="ghost" size="icon" className="text-gray-400 hover:text-red-600 hover:bg-red-50" onClick={() => handleDelete(event.id)}>
+                      {loadingActionIds[`del_${event.id}`] ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                    </Button>
                     {event.has_pdf && (
                       <a href={`/api/events/pdf?id=${event.id}`} target="_blank" rel="noopener noreferrer">
                         <Button size="sm" variant="secondary" className="gap-1 bg-blue-50 text-blue-700 border-blue-100 hover:bg-blue-100"><Eye className="h-4 w-4" />View Proof</Button>
                       </a>
                     )}
-                    <Button size="sm" variant="secondary" onClick={() => handleExportPDF(event)} className="gap-1"><FileDown className="h-4 w-4" />Export Applicants</Button>
+                    <Button disabled={isExportingMap[event.id]} size="sm" variant="secondary" onClick={() => handleExportPDF(event)} className="gap-1">
+                      {isExportingMap[event.id] ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}Export Applicants
+                    </Button>
                   </div>
                 </div>
               </CardHeader>
@@ -725,7 +754,9 @@ export function AdminEvents() {
                     <Button size="sm" variant="secondary" className="gap-1 bg-blue-50 text-blue-700 border-blue-100 hover:bg-blue-100"><Eye className="h-4 w-4" />View Proof</Button>
                   </a>
                 )}
-                <Button size="sm" variant="secondary" onClick={() => handleExportPDF(selectedEvent)} className="gap-1"><FileDown className="h-4 w-4" />Export Applicants</Button>
+                <Button disabled={isExportingMap[selectedEvent.id]} size="sm" variant="secondary" onClick={() => handleExportPDF(selectedEvent)} className="gap-1">
+                  {isExportingMap[selectedEvent.id] ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}Export Applicants
+                </Button>
                 <Button variant="outline" onClick={() => setSelectedEvent(null)}>Close</Button>
               </DialogFooter>
             </>

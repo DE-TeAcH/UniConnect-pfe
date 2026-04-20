@@ -1,7 +1,7 @@
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { CalendarDays, Users, ArrowRight, Sparkles, MapPin, Calendar, Heart, ArrowUpRight, CheckCircle2, User } from 'lucide-react';
+import { CalendarDays, Users, ArrowRight, Sparkles, MapPin, Calendar, Heart, ArrowUpRight, CheckCircle2, User, Building } from 'lucide-react';
 import { usePublicStore } from '../../contexts/PublicStoreContext';
 import { api } from '../../services/api';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
@@ -465,10 +465,17 @@ export function PublicDashboard() {
                                             <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Location</p>
                                             <p className="font-medium flex items-center gap-2"><MapPin className="h-4 w-4 text-muted-foreground" /> {selectedEvent.location}</p>
                                         </div>
-                                        <div>
+                                        <div className="col-span-2 sm:col-span-1">
                                             <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Date & Time</p>
-                                            <p className="font-medium flex flex-col gap-1">
-                                                <span className="flex items-center gap-2"><Calendar className="h-4 w-4 text-muted-foreground" /> {formatDate(selectedEvent.start_date)} • {selectedEvent.start_time}</span>
+                                            <p className="font-medium flex flex-col gap-1.5 text-sm">
+                                                <span className="flex items-center gap-2">
+                                                    <Calendar className="h-4 w-4 text-muted-foreground shrink-0" /> 
+                                                    Start: {formatDate(selectedEvent.start_date)} {selectedEvent.start_time ? `at ${selectedEvent.start_time}` : ''}
+                                                </span>
+                                                <span className="flex items-center gap-2">
+                                                    <Calendar className="h-4 w-4 text-transparent shrink-0" /> 
+                                                    End: {formatDate(selectedEvent.end_date)} {selectedEvent.end_time ? `at ${selectedEvent.end_time}` : ''}
+                                                </span>
                                             </p>
                                         </div>
                                         <div>
@@ -495,6 +502,34 @@ export function PublicDashboard() {
                                                     <Users className="h-4 w-4 text-muted-foreground" /> {selectedEvent.registration_count || 0}{selectedEvent.max_seats ? ` / ${selectedEvent.max_seats}` : ''} Registered
                                                 </p>
                                             </div>
+                                        )}
+                                        
+                                        {selectedEvent.uni_exclusive && (
+                                            <>
+                                                <div className="col-span-2 sm:col-span-1">
+                                                    <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Responsible Lab</p>
+                                                    <p className="font-medium flex items-center gap-2">
+                                                        <Building className="h-4 w-4 text-muted-foreground" /> {selectedEvent.laboratory || '—'}
+                                                    </p>
+                                                </div>
+                                                {(selectedEvent.organizers?.length > 0 || selectedEvent.reviewers?.length > 0) && (
+                                                    <div className="col-span-2">
+                                                        <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider font-semibold">Supervisors</p>
+                                                        <div className="grid sm:grid-cols-2 gap-2">
+                                                            {selectedEvent.organizers?.map((org: string, i: number) => (
+                                                                <p key={`org-${i}`} className="font-medium flex items-center gap-2 text-sm bg-muted/40 p-2 rounded-md border text-foreground/90">
+                                                                    <User className="h-4 w-4 text-muted-foreground shrink-0" /> {org} <Badge variant="secondary" className="ml-auto text-[10px] shrink-0">Organizer</Badge>
+                                                                </p>
+                                                            ))}
+                                                            {selectedEvent.reviewers?.map((rev: string, i: number) => (
+                                                                <p key={`rev-${i}`} className="font-medium flex items-center gap-2 text-sm bg-muted/40 p-2 rounded-md border text-foreground/90">
+                                                                    <User className="h-4 w-4 text-muted-foreground shrink-0" /> {rev} <Badge variant="secondary" className="ml-auto text-[10px] shrink-0">Reviewer</Badge>
+                                                                </p>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </>
                                         )}
                                     </div>
                                 </div>

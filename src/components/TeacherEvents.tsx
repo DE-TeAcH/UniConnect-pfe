@@ -11,7 +11,7 @@ import { Switch } from './ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import {
     Calendar, MapPin, Mic, Users, Plus, Trash2, Eye, RefreshCw,
-    DollarSign, Link, FileDown, ChevronDown, ChevronUp, ArrowUpDown, ArrowUp, ArrowDown
+    DollarSign, Link, FileDown, ChevronDown, ChevronUp, ArrowUpDown, ArrowUp, ArrowDown, Loader2
 } from 'lucide-react';
 import { api } from '../services/api';
 import { exportEventApplicantsPDF } from '../utils/pdfExport';
@@ -51,6 +51,10 @@ export function TeacherEvents({ currentUser }: TeacherEventsProps) {
 
     const [sortField, setSortField] = useState<'date' | 'title' | 'attendees'>('date');
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
+    const [isSaving, setIsSaving] = useState(false);
+    const [loadingActionIds, setLoadingActionIds] = useState<Record<string, boolean>>({});
+    const [isExportingMap, setIsExportingMap] = useState<Record<string, boolean>>({});
 
     const [categories, setCategories] = useState<any[]>([]);
 
@@ -119,6 +123,7 @@ export function TeacherEvents({ currentUser }: TeacherEventsProps) {
             toast.error('Proof document (PDF) is required.');
             return;
         }
+        setIsSaving(true);
         try {
             const payload: any = {
                 title: form.title, description: form.description, location: form.location,
@@ -140,6 +145,7 @@ export function TeacherEvents({ currentUser }: TeacherEventsProps) {
                 else toast.error(res.message);
             }
         } catch (e) { toast.error('Server error.'); }
+        finally { setIsSaving(false); }
         setIsOpen(false);
         setForm(emptyForm());
         setEditingId(null);
@@ -162,14 +168,17 @@ export function TeacherEvents({ currentUser }: TeacherEventsProps) {
 
     const handleDelete = async (id: string) => {
         if (!confirm('Delete this event?')) return;
+        setLoadingActionIds(p => ({...p, [`del_${id}`]: true}));
         try {
             const res = await api.events.delete(id);
             if (res.success) { toast.success('Event deleted.'); fetchEvents(); }
             else toast.error(res.message);
         } catch (e) { toast.error('Server error.'); }
+        finally { setLoadingActionIds(p => ({...p, [`del_${id}`]: false})); }
     };
 
     const handleExportPDF = async (event: any) => {
+        setIsExportingMap(p => ({...p, [event.id]: true}));
         try {
             const toastId = toast.loading('Fetching applicants...');
             let applicants: any[] = [];
@@ -184,7 +193,7 @@ export function TeacherEvents({ currentUser }: TeacherEventsProps) {
             exportEventApplicantsPDF(event, applicants);
         } catch (e) {
             toast.error('Failed to fetch applicants for PDF');
-        }
+        } finally { setIsExportingMap(p => ({...p, [event.id]: false})); }
     };
 
     const toggle = (id: string) => setExpanded(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
@@ -408,7 +417,8 @@ export function TeacherEvents({ currentUser }: TeacherEventsProps) {
                             </ScrollArea>
                             <DialogFooter>
                                 <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-                                <Button onClick={handleSave} className="bg-gradient-to-br from-blue-600 to-purple-700 text-white border-0">
+                                <Button disabled={isSaving} onClick={handleSave} className="bg-gradient-to-br from-blue-600 to-purple-700 text-white border-0">
+                                    {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                                     {editingId ? 'Save Changes' : 'Create Event'}
                                 </Button>
                             </DialogFooter>
@@ -476,9 +486,11 @@ export function TeacherEvents({ currentUser }: TeacherEventsProps) {
                                         </Button>
                                         <Button variant="outline" size="sm" onClick={() => setSelectedEvent(event)}><Eye className="h-4 w-4" /></Button>
                                         <Button variant="outline" size="sm" onClick={() => handleEdit(event)}>Edit</Button>
-                                        <Button variant="ghost" size="icon" className="text-gray-400 hover:text-red-600 hover:bg-red-50" onClick={() => handleDelete(event.id)}><Trash2 className="h-4 w-4" /></Button>
-                                        <Button size="sm" variant="secondary" onClick={() => handleExportPDF(event)} className="gap-1">
-                                            <FileDown className="h-4 w-4" />PDF
+                                        <Button disabled={loadingActionIds[`del_${event.id}`]} variant="ghost" size="icon" className="text-gray-400 hover:text-red-600 hover:bg-red-50" onClick={() => handleDelete(event.id)}>
+                                            {loadingActionIds[`del_${event.id}`] ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                        </Button>
+                                        <Button disabled={isExportingMap[event.id]} size="sm" variant="secondary" onClick={() => handleExportPDF(event)} className="gap-1">
+                                            {isExportingMap[event.id] ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}PDF
                                         </Button>
                                     </div>
                                 </div>
@@ -554,8 +566,8 @@ export function TeacherEvents({ currentUser }: TeacherEventsProps) {
                                 </div>
                             </ScrollArea>
                             <DialogFooter>
-                                <Button size="sm" variant="secondary" onClick={() => handleExportPDF(selectedEvent)} className="gap-1 mr-auto">
-                                    <FileDown className="h-4 w-4" />Export PDF
+                                <Button disabled={isExportingMap[selectedEvent.id]} size="sm" variant="secondary" onClick={() => handleExportPDF(selectedEvent)} className="gap-1 mr-auto">
+                                    {isExportingMap[selectedEvent.id] ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}Export PDF
                                 </Button>
                                 <Button variant="outline" onClick={() => setSelectedEvent(null)}>Close</Button>
                             </DialogFooter>

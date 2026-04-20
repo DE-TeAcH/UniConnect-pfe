@@ -11,7 +11,7 @@ import { Separator } from './ui/separator';
 import { Switch } from './ui/switch';
 import {
     Calendar, MapPin, Mic, Users, Plus, Trash2, Eye, ChevronDown, ChevronUp,
-    Link, FileDown, ArrowUpDown, ArrowUp, ArrowDown
+    Link, FileDown, ArrowUpDown, ArrowUp, ArrowDown, Loader2
 } from 'lucide-react';
 import { api } from '../services/api';
 import { exportEventApplicantsPDF } from '../utils/pdfExport';
@@ -45,6 +45,10 @@ export function CompanyEvents({ currentUser }: CompanyEventsProps) {
 
     const [sortField, setSortField] = useState<'date' | 'title' | 'attendees'>('date');
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
+    const [isSaving, setIsSaving] = useState(false);
+    const [loadingActionIds, setLoadingActionIds] = useState<Record<string, boolean>>({});
+    const [isExportingMap, setIsExportingMap] = useState<Record<string, boolean>>({});
 
     const [categories, setCategories] = useState<any[]>([]);
     const [newReviewer, setNewReviewer] = useState('');
@@ -99,6 +103,7 @@ export function CompanyEvents({ currentUser }: CompanyEventsProps) {
         if (new Date(form.startDate) > new Date(form.endDate)) { toast.error('End date cannot be before start date.'); return; }
         if (form.startDate === form.endDate && form.startTime && form.endTime && form.startTime > form.endTime) { toast.error('End time cannot be before start time.'); return; }
         if (!form.proofOfAccess) { toast.error('Proof document (PDF) is required.'); return; }
+        setIsSaving(true);
         try {
             const payload: any = {
                 title: form.title, description: form.description, location: form.location,
@@ -120,6 +125,7 @@ export function CompanyEvents({ currentUser }: CompanyEventsProps) {
                 else toast.error(res.message);
             }
         } catch (e) { toast.error('Server error.'); }
+        finally { setIsSaving(false); }
         setIsOpen(false); setForm(emptyForm()); setEditingId(null);
     };
 
@@ -139,14 +145,17 @@ export function CompanyEvents({ currentUser }: CompanyEventsProps) {
 
     const handleDelete = async (id: string) => {
         if (!confirm('Delete this event?')) return;
+        setLoadingActionIds(p => ({...p, [`del_${id}`]: true}));
         try {
             const res = await api.events.delete(id);
             if (res.success) { toast.success('Deleted.'); fetchEvents(); }
             else toast.error(res.message);
         } catch (e) { toast.error('Server error.'); }
+        finally { setLoadingActionIds(p => ({...p, [`del_${id}`]: false})); }
     };
 
     const handleExportPDF = async (event: any) => {
+        setIsExportingMap(p => ({...p, [event.id]: true}));
         try {
             const toastId = toast.loading('Fetching applicants...');
             let applicants: any[] = [];
@@ -161,7 +170,7 @@ export function CompanyEvents({ currentUser }: CompanyEventsProps) {
             exportEventApplicantsPDF(event, applicants);
         } catch (e) {
             toast.error('Failed to fetch applicants for PDF');
-        }
+        } finally { setIsExportingMap(p => ({...p, [event.id]: false})); }
     };
 
     const toggle = (id: string) => setExpanded(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
@@ -372,7 +381,10 @@ export function CompanyEvents({ currentUser }: CompanyEventsProps) {
                         </ScrollArea>
                         <DialogFooter>
                             <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-                            <Button onClick={handleSave} className="bg-gradient-to-br from-blue-600 to-purple-700 text-white border-0">{editingId ? 'Save' : 'Create'}</Button>
+                            <Button disabled={isSaving} onClick={handleSave} className="bg-gradient-to-br from-blue-600 to-purple-700 text-white border-0">
+                                {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                                {editingId ? 'Save' : 'Create'}
+                            </Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
@@ -432,7 +444,12 @@ export function CompanyEvents({ currentUser }: CompanyEventsProps) {
                                         <Button variant="outline" size="sm" onClick={() => toggle(event.id)}>{isExp ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</Button>
                                         <Button variant="outline" size="sm" onClick={() => setSelectedEvent(event)}><Eye className="h-4 w-4" /></Button>
                                         <Button variant="outline" size="sm" onClick={() => handleEdit(event)}>Edit</Button>
-                                        <Button size="sm" variant="secondary" onClick={() => handleExportPDF(event)} className="gap-1"><FileDown className="h-4 w-4" />PDF</Button>
+                                        <Button disabled={loadingActionIds[`del_${event.id}`]} variant="ghost" size="icon" className="text-gray-400 hover:text-red-600 hover:bg-red-50" onClick={() => handleDelete(event.id)}>
+                                            {loadingActionIds[`del_${event.id}`] ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                        </Button>
+                                        <Button disabled={isExportingMap[event.id]} size="sm" variant="secondary" onClick={() => handleExportPDF(event)} className="gap-1">
+                                            {isExportingMap[event.id] ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}PDF
+                                        </Button>
                                     </div>
                                 </div>
                             </CardHeader>
@@ -484,7 +501,9 @@ export function CompanyEvents({ currentUser }: CompanyEventsProps) {
                                 </div>
                             </ScrollArea>
                             <DialogFooter>
-                                <Button size="sm" variant="secondary" onClick={() => handleExportPDF(selectedEvent)} className="gap-1 mr-auto"><FileDown className="h-4 w-4" />Export PDF</Button>
+                                <Button disabled={isExportingMap[selectedEvent.id]} size="sm" variant="secondary" onClick={() => handleExportPDF(selectedEvent)} className="gap-1 mr-auto">
+                                    {isExportingMap[selectedEvent.id] ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}Export PDF
+                                </Button>
                                 <Button variant="outline" onClick={() => setSelectedEvent(null)}>Close</Button>
                             </DialogFooter>
                         </>

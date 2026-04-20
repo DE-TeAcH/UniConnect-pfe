@@ -36,9 +36,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         const pin = generatePin();
-        storePin(email, pin, purpose);
-
         await sendPinEmail(email, pin, purpose);
+        storePin(email, pin, purpose);
 
         sendResponse(res, true, 'PIN sent successfully');
     } catch (err) {

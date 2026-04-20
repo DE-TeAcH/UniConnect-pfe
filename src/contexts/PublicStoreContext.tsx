@@ -14,7 +14,7 @@ export interface PublicUser {
     affiliation?: string;
 }
 
-export type PublicView = 'dashboard' | 'events' | 'creators' | 'history' | 'settings' | 'creator-profile' | 'event-details';
+export type PublicView = 'dashboard' | 'events' | 'creators' | 'history' | 'settings' | 'creator-profile';
 
 interface PublicStoreContextType {
     user: PublicUser | null;
@@ -142,7 +142,10 @@ export function PublicStoreProvider({ children }: { children: React.ReactNode })
             try {
                 if (user) await api.eventRegistrations.create({ event_id: String(eventId), user_id: String(user.id) });
                 setAppliedEventIds([...appliedEventIds, eventId]);
-            } catch (err) { console.error('Failed to apply to event', err); }
+            } catch (err) { 
+                console.error('Failed to apply to event', err); 
+                throw err; 
+            }
         }
     };
 
@@ -151,7 +154,10 @@ export function PublicStoreProvider({ children }: { children: React.ReactNode })
             try {
                 if (user) await api.favorites.toggle({ event_id: String(eventId), user_id: String(user.id) });
                 setSavedEventIds([...savedEventIds, eventId]);
-            } catch (err) { console.error('Failed to save event', err); }
+            } catch (err) { 
+                console.error('Failed to save event', err); 
+                throw err;
+            }
         }
     };
 
@@ -159,7 +165,10 @@ export function PublicStoreProvider({ children }: { children: React.ReactNode })
         try {
             if (user) await api.favorites.toggle({ event_id: String(eventId), user_id: String(user.id) });
             setSavedEventIds(savedEventIds.filter(id => id !== eventId));
-        } catch (err) { console.error('Failed to unsave event', err); }
+        } catch (err) { 
+            console.error('Failed to unsave event', err); 
+            throw err;
+        }
     };
 
     const followCreator = async (creatorId: string | number) => {
@@ -167,7 +176,10 @@ export function PublicStoreProvider({ children }: { children: React.ReactNode })
             try {
                 if (user) await api.follows.toggle({ creator_id: String(creatorId), follower_id: String(user.id) });
                 setFollowedCreatorIds([...followedCreatorIds, creatorId]);
-            } catch (err) { console.error('Failed to follow creator', err); }
+            } catch (err) { 
+                console.error('Failed to follow creator', err); 
+                throw err;
+            }
         }
     };
 
@@ -175,7 +187,10 @@ export function PublicStoreProvider({ children }: { children: React.ReactNode })
         try {
             if (user) await api.follows.toggle({ creator_id: String(creatorId), follower_id: String(user.id) });
             setFollowedCreatorIds(followedCreatorIds.filter(id => id !== creatorId));
-        } catch (err) { console.error('Failed to unfollow creator', err); }
+        } catch (err) { 
+            console.error('Failed to unfollow creator', err); 
+            throw err;
+        }
     };
 
     const [currentView, setCurrentView] = useState<PublicView>('dashboard');

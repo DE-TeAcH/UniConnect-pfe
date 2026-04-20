@@ -6,7 +6,7 @@ import { api } from '../../services/api';
 import { toast } from 'sonner';
 import { useState, useMemo, useEffect } from 'react';
 import { Input } from '../ui/input';
-import { Search } from 'lucide-react';
+import { Loader2, Search } from 'lucide-react';
 
 export function PublicCreators() {
     const { user, requireLogin, followCreator, unfollowCreator, followedCreatorIds, navigateTo } = usePublicStore();
@@ -33,16 +33,24 @@ export function PublicCreators() {
         fetchCreators();
     }, []);
 
+    const [loadingActions, setLoadingActions] = useState<Record<string, boolean>>({});
+
     const handleFollow = (e: React.MouseEvent, creatorId: string | number) => {
         e.preventDefault();
         e.stopPropagation();
-        requireLogin(() => {
-            if (followedCreatorIds.includes(creatorId)) {
-                unfollowCreator(creatorId);
-                toast.info('Unfollowed creator');
-            } else {
-                followCreator(creatorId);
-                toast.success('Following creator');
+        requireLogin(async () => {
+            setLoadingActions(prev => ({...prev, [creatorId]: true}));
+            try {
+                if (followedCreatorIds.includes(creatorId)) {
+                    await unfollowCreator(creatorId);
+                    toast.info('Unfollowed creator');
+                } else {
+                    await followCreator(creatorId);
+                    toast.success('Following creator');
+                }
+            } catch (err) {
+            } finally {
+                setLoadingActions(prev => ({...prev, [creatorId]: false}));
             }
         });
     };
@@ -176,44 +184,46 @@ export function PublicCreators() {
                         return (
                             <div key={creator.id} className="cursor-pointer" onClick={() => navigateTo('creator-profile', creator.id)}>
                                 <Card className="h-full hover:-translate-y-1 transition-transform duration-300 hover:shadow-lg border-muted group relative overflow-hidden">
-                                    <div className={`h-24 bg-gradient-to-br ${getRoleGradient(creatorRole)} absolute top-0 left-0 right-0`} />
+                                    <div className={`h-16 sm:h-24 bg-gradient-to-br ${getRoleGradient(creatorRole)} absolute top-0 left-0 right-0`} />
 
-                                    <CardContent className="p-6 pt-12 text-center relative z-10">
-                                        <div className={`w-20 h-20 mx-auto rounded-full bg-background border-4 border-background shadow-md flex items-center justify-center font-bold text-3xl uppercase mb-4 ${getRoleTextColor(creatorRole)}`}>
+                                    <CardContent className="p-4 pt-8 sm:p-6 sm:pt-12 text-center relative z-10">
+                                        <div className={`w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-background border-4 border-background shadow-md flex items-center justify-center font-bold text-2xl sm:text-3xl uppercase mb-3 sm:mb-4 ${getRoleTextColor(creatorRole)}`}>
                                             {displayName.charAt(0)}
                                         </div>
 
-                                        <h3 className={`font-bold text-lg mb-0.5 transition-colors line-clamp-1 group-hover:text-primary`}>{displayName}</h3>
+                                        <h3 className={`font-bold text-base sm:text-lg mb-0.5 transition-colors line-clamp-1 group-hover:text-primary`}>{displayName}</h3>
                                         {(creator.faculty || creator.location) && (
-                                            <p className="text-xs text-muted-foreground mb-3 truncate px-2">
+                                            <p className="text-[10px] sm:text-xs text-muted-foreground mb-2 sm:mb-3 truncate px-1 sm:px-2">
                                                 {creatorRole === 'team-leader'
                                                     ? [creator.faculty, creator.location].filter(Boolean).join(' • ')
                                                     : (creator.faculty || creator.location)}
                                             </p>
                                         )}
-                                        <Badge variant="outline" className={`mb-4 uppercase tracking-wider text-[10px] ${getRoleBadgeColor(creatorRole)}`}>
+                                        <Badge variant="outline" className={`mb-3 sm:mb-4 uppercase tracking-wider text-[9px] sm:text-[10px] py-0 px-2 sm:py-0.5 sm:px-2.5 ${getRoleBadgeColor(creatorRole)}`}>
                                             {creatorRole === 'team-leader' ? 'team' : creatorRole.replace('-', ' ')}
                                         </Badge>
 
-                                        <div className="flex justify-center gap-6 mt-2 mb-6 text-sm">
+                                        <div className="flex justify-center gap-4 sm:gap-6 mt-1 sm:mt-2 mb-4 sm:mb-6 text-xs sm:text-sm">
                                             <div className="text-center">
-                                                <p className="font-bold text-foreground">{creator.event_count || 0}</p>
-                                                <p className="text-xs text-muted-foreground uppercase tracking-wider">Events</p>
+                                                <p className="font-bold text-foreground text-sm sm:text-base">{creator.event_count || 0}</p>
+                                                <p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wider">Events</p>
                                             </div>
                                             <div className="text-center">
-                                                <p className="font-bold text-foreground">
+                                                <p className="font-bold text-foreground text-sm sm:text-base">
                                                     {(creator.follower_count || 0) + (isFollowing ? 1 : 0)}
                                                 </p>
-                                                <p className="text-xs text-muted-foreground uppercase tracking-wider">Followers</p>
+                                                <p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wider">Followers</p>
                                             </div>
                                         </div>
 
                                         {!isSelf && (
                                             <Button
+                                                disabled={loadingActions[creator.id]}
                                                 variant={isFollowing ? 'secondary' : 'default'}
-                                                className="w-full relative z-20"
+                                                className="w-full relative z-20 h-9 sm:h-10 text-xs sm:text-sm"
                                                 onClick={(e) => handleFollow(e, creator.id)}
                                             >
+                                                {loadingActions[creator.id] ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : null}
                                                 {isFollowing ? 'Unfollow' : 'Follow'}
                                             </Button>
                                         )}

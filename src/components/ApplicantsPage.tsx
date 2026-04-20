@@ -9,7 +9,7 @@ import { ScrollArea } from './ui/scroll-area';
 import { Separator } from './ui/separator';
 import {
     Search, FileDown, Calendar, MapPin, Mic, Users, CreditCard, CheckCircle2, Clock,
-    Filter, ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, ShieldCheck, ChevronUp, ChevronDown
+    Filter, ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, ShieldCheck, ChevronUp, ChevronDown, Loader2
 } from 'lucide-react';
 import { api } from '../services/api';
 import { toast } from 'sonner';
@@ -37,6 +37,7 @@ export function ApplicantsPage({ role, currentUser }: ApplicantsPageProps) {
     const [allEvents, setAllEvents] = useState<any[]>([]);
     const [selected, setSelected] = useState<any | null>(null);
     const [search, setSearch] = useState('');
+    const [isExportingMap, setIsExportingMap] = useState<Record<string, boolean>>({});
 
     // Filters
     const [statusFilter, setStatusFilter] = useState<'all' | 'upcoming' | 'completed'>('all');
@@ -148,6 +149,7 @@ export function ApplicantsPage({ role, currentUser }: ApplicantsPageProps) {
     }, [selected]);
 
     const handleExportPDF = async (event: any) => {
+        setIsExportingMap(p => ({...p, [event.id]: true}));
         console.log('[PDF Debug] event:', event.id, 'is_paid:', event.is_paid, 'price_type:', event.price_type);
         try {
             const toastId = toast.loading('Fetching applicants...');
@@ -169,6 +171,8 @@ export function ApplicantsPage({ role, currentUser }: ApplicantsPageProps) {
         } catch (e) {
             toast.error('Failed to fetch applicants for PDF');
             console.error('[PDF Debug] Error:', e);
+        } finally {
+            setIsExportingMap(p => ({...p, [event.id]: false}));
         }
     };
 
@@ -370,8 +374,8 @@ export function ApplicantsPage({ role, currentUser }: ApplicantsPageProps) {
                                     </div>
                                     <div className="flex gap-2 w-full sm:w-auto">
                                         <Button size="sm" variant="outline" className="flex-1 sm:flex-none" onClick={() => openDetail(event)}>View</Button>
-                                        <Button size="sm" variant="secondary" className="flex-1 sm:flex-none gap-1" onClick={() => handleExportPDF(event)}>
-                                            <FileDown className="h-3.5 w-3.5" />PDF
+                                        <Button disabled={isExportingMap[event.id]} size="sm" variant="secondary" className="flex-1 sm:flex-none gap-1" onClick={() => handleExportPDF(event)}>
+                                            {isExportingMap[event.id] ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileDown className="h-3.5 w-3.5" />}PDF
                                         </Button>
                                     </div>
                                 </div>
@@ -497,8 +501,8 @@ export function ApplicantsPage({ role, currentUser }: ApplicantsPageProps) {
 
                             <Separator />
                             <div className="px-6 py-4 flex justify-between items-center">
-                                <Button size="sm" variant="secondary" className="gap-1" onClick={() => handleExportPDF(selected)}>
-                                    <FileDown className="h-4 w-4" />Export PDF
+                                <Button disabled={isExportingMap[selected.id]} size="sm" variant="secondary" className="gap-1" onClick={() => handleExportPDF(selected)}>
+                                    {isExportingMap[selected.id] ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}Export PDF
                                 </Button>
                                 <Button variant="outline" onClick={() => { setSelected(null); setSearch(''); }}>Close</Button>
                             </div>

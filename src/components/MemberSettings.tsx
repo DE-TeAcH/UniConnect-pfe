@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Switch } from './ui/switch';
 import { Separator } from './ui/separator';
-import { User, Mail, Lock, Trash2, AlertTriangle, UserCog } from 'lucide-react';
+import { User, Mail, Lock, Trash2, AlertTriangle, UserCog, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from '../services/api';
 
@@ -53,6 +53,10 @@ export function MemberSettings({ currentUser, onLogout, onProfileUpdate }: Membe
     const [successorFullName, setSuccessorFullName] = useState('');
     const [successorUsername, setSuccessorUsername] = useState('');
 
+    const [isSavingProfile, setIsSavingProfile] = useState(false);
+    const [isChangingPassword, setIsChangingPassword] = useState(false);
+    const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+
     // Real-time username check
     React.useEffect(() => {
         if (!profileData.username || profileData.username === currentUser.username) {
@@ -84,6 +88,7 @@ export function MemberSettings({ currentUser, onLogout, onProfileUpdate }: Membe
         }
 
         try {
+            setIsSavingProfile(true);
             const response = await api.users.update(String(currentUser.id), {
                 name: profileData.name,
                 username: profileData.username,
@@ -97,6 +102,8 @@ export function MemberSettings({ currentUser, onLogout, onProfileUpdate }: Membe
             }
         } catch (error) {
             toast.error('An error occurred while updating profile.');
+        } finally {
+            setIsSavingProfile(false);
         }
     };
 
@@ -111,6 +118,7 @@ export function MemberSettings({ currentUser, onLogout, onProfileUpdate }: Membe
         }
 
         try {
+            setIsChangingPassword(true);
             const response = await api.users.update(String(currentUser.id), {
                 password: passwordData.newPassword
             });
@@ -123,6 +131,8 @@ export function MemberSettings({ currentUser, onLogout, onProfileUpdate }: Membe
             }
         } catch (error) {
             toast.error('An error occurred while changing password.');
+        } finally {
+            setIsChangingPassword(false);
         }
     };
 
@@ -145,6 +155,7 @@ export function MemberSettings({ currentUser, onLogout, onProfileUpdate }: Membe
         }
 
         try {
+            setIsDeletingAccount(true);
             const response = await api.users.delete(String(currentUser.id));
             if (response.success) {
                 toast.success(`Account deleted successfully.${hasSuccessor ? ` ${successorFullName} has been assigned as your successor.` : ''}`);
@@ -155,6 +166,8 @@ export function MemberSettings({ currentUser, onLogout, onProfileUpdate }: Membe
             }
         } catch (error) {
             toast.error('An error occurred while deleting account.');
+        } finally {
+            setIsDeletingAccount(false);
         }
     };
 
@@ -252,10 +265,11 @@ export function MemberSettings({ currentUser, onLogout, onProfileUpdate }: Membe
                         </div>
                         <Button
                             onClick={handleUpdateProfile}
-                            disabled={!usernameStatus.isAvailable || usernameStatus.isChecking}
+                            disabled={!usernameStatus.isAvailable || usernameStatus.isChecking || isSavingProfile}
                             className="w-full bg-gradient-to-br from-blue-600 to-purple-700 hover:from-blue-700 hover:to-purple-800 text-white border-0"
                         >
-                            {usernameStatus.isChecking ? 'Checking...' : 'Save Changes'}
+                            {usernameStatus.isChecking || isSavingProfile ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                            {usernameStatus.isChecking ? 'Checking...' : isSavingProfile ? 'Saving...' : 'Save Changes'}
                         </Button>
                     </CardContent>
                 </Card>
@@ -303,7 +317,8 @@ export function MemberSettings({ currentUser, onLogout, onProfileUpdate }: Membe
                                     placeholder="Confirm new password"
                                 />
                             </div>
-                            <Button onClick={handleChangePassword} variant="outline">
+                            <Button disabled={isChangingPassword} onClick={handleChangePassword} variant="outline">
+                                {isChangingPassword ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                                 Update Password
                             </Button>
                         </div>
@@ -417,8 +432,9 @@ export function MemberSettings({ currentUser, onLogout, onProfileUpdate }: Membe
                         <Button
                             variant="destructive"
                             onClick={handleDeleteAccount}
-                            disabled={deleteConfirmation !== 'DELETE'}
+                            disabled={deleteConfirmation !== 'DELETE' || isDeletingAccount}
                         >
+                            {isDeletingAccount ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                             Delete My Account
                         </Button>
                     </DialogFooter>

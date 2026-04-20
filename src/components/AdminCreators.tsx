@@ -26,7 +26,8 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  RefreshCw
+  RefreshCw,
+  Loader2
 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { api } from '../services/api';
@@ -756,7 +757,8 @@ export function AdminCreators() {
                 <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleAddTeam} className="bg-gradient-to-br from-blue-600 to-purple-700 hover:from-blue-700 hover:to-purple-800 text-white border-0">
+                <Button disabled={isLoading} onClick={handleAddTeam} className="bg-gradient-to-br from-blue-600 to-purple-700 hover:from-blue-700 hover:to-purple-800 text-white border-0">
+                  {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                   Create
                 </Button>
               </DialogFooter>

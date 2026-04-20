@@ -5,6 +5,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { toast } from 'sonner';
 import { api } from '../services/api';
+import { Loader2 } from 'lucide-react';
 import LightLogo from '../assets/UniConnect_VLight.png';
 import DarkLogo from '../assets/UniConnect_Dark.png';
 
@@ -73,6 +74,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
                 </div>
 
                 <Button type="submit" className="w-full bg-gradient-to-br from-blue-600 to-purple-700 rounded-2xl mb-4" disabled={isLoading}>
+                  {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                   {isLoading ? 'Signing in...' : 'Sign In'}
                 </Button>
               </form>

@@ -23,7 +23,8 @@ import {
   ArrowDown,
   Search,
   RefreshCw,
-  Edit
+  Edit,
+  Loader2
 } from 'lucide-react';
 import { api } from '../services/api';
 import { formatDisplayDate } from '../utils/dates';
@@ -119,6 +120,7 @@ export function AdminUsers() {
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const [newUser, setNewUser] = useState({
     name: '',
@@ -332,6 +334,7 @@ export function AdminUsers() {
     }
 
     try {
+      setIsUpdating(true);
       const updateData: any = {
         name: editUser.name,
         username: editUser.username,
@@ -365,6 +368,8 @@ export function AdminUsers() {
     } catch (error) {
       console.error('Error updating user:', error);
       toast.error('Failed to update user');
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -749,7 +754,8 @@ export function AdminUsers() {
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleUpdateUser} className="bg-gradient-to-br from-blue-600 to-purple-700 hover:from-blue-700 hover:to-purple-800 text-white border-0">
+            <Button disabled={isUpdating} onClick={handleUpdateUser} className="bg-gradient-to-br from-blue-600 to-purple-700 hover:from-blue-700 hover:to-purple-800 text-white border-0">
+              {isUpdating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
               Update User
             </Button>
           </DialogFooter>

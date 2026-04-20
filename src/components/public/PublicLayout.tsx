@@ -4,7 +4,6 @@ import { Layout } from '../Layout';
 import { PublicAuth } from './PublicAuth';
 import { PublicDashboard } from './PublicDashboard';
 import { PublicEvents } from './PublicEvents';
-import { PublicEventDetails } from './PublicEventDetails';
 import { PublicCreators } from './PublicCreators';
 import { PublicCreatorProfile } from './PublicCreatorProfile';
 import { PublicHistory } from './PublicHistory';
@@ -33,8 +32,6 @@ function PublicLayoutContent() {
                 return <PublicDashboard />;
             case 'events':
                 return <PublicEvents />;
-            case 'event-details':
-                return <PublicEventDetails />;
             case 'creators':
                 return <PublicCreators />;
             case 'creator-profile':
