@@ -351,16 +351,13 @@ export function PublicEvents() {
                                         </div>
                                         <div className="col-span-2 sm:col-span-1">
                                             <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Date & Time</p>
-                                            <p className="font-medium flex flex-col gap-1.5 text-sm">
-                                                <span className="flex items-center gap-2">
-                                                    <Calendar className="h-4 w-4 text-muted-foreground shrink-0" /> 
-                                                    Start: {formatDate(selectedEvent.start_date)} {selectedEvent.start_time ? `at ${selectedEvent.start_time}` : ''}
-                                                </span>
-                                                <span className="flex items-center gap-2">
-                                                    <Calendar className="h-4 w-4 text-transparent shrink-0" /> 
-                                                    End: {formatDate(selectedEvent.end_date)} {selectedEvent.end_time ? `at ${selectedEvent.end_time}` : ''}
-                                                </span>
-                                            </p>
+                                            <div className="font-medium flex items-center gap-2 text-sm">
+                                                <Calendar className="h-4 w-4 text-muted-foreground shrink-0" /> 
+                                                <div className="flex flex-col gap-1.5">
+                                                    <span>Start: {formatDate(selectedEvent.start_date)} {selectedEvent.start_time ? `at ${selectedEvent.start_time}` : ''}</span>
+                                                    <span>End: {formatDate(selectedEvent.end_date)} {selectedEvent.end_time ? `at ${selectedEvent.end_time}` : ''}</span>
+                                                </div>
+                                            </div>
                                         </div>
                                         <div>
                                             <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Registration</p>
@@ -388,7 +385,7 @@ export function PublicEvents() {
                                             </div>
                                         )}
                                         
-                                        {selectedEvent.uni_exclusive && (
+                                        {!!selectedEvent.uni_exclusive && (
                                             <>
                                                 <div className="col-span-2 sm:col-span-1">
                                                     <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Responsible Lab</p>
