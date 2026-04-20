@@ -2,7 +2,6 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import db from '../config/database';
 import { runCors } from '../utils/cors';
 import { sendResponse } from '../utils/response';
-import { v4 as uuidv4 } from 'uuid';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (runCors(req, res)) return;

@@ -2,7 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import db from '../config/database';
 import { runCors } from '../utils/cors';
 import { sendResponse } from '../utils/response';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (runCors(req, res)) return;
@@ -15,7 +15,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const conn = db.getConnection();
         if (!conn) throw new Error('Database connection failed');
 
-        const id = uuidv4();
+        const id = randomUUID();
         await conn.execute(
             'INSERT INTO event_categories (id, name, uni_exclusive) VALUES (?, ?, ?)',
             [id, name, uni_exclusive || false]

@@ -2,7 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import db from '../config/database';
 import { runCors } from '../utils/cors';
 import { sendResponse } from '../utils/response';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import { verifyEventPDF } from '../utils/aiVerify';
 
 export const config = {
@@ -37,7 +37,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const conn = db.getConnection();
         if (!conn) throw new Error('Database connection failed');
 
-        const id = uuidv4();
+        const id = randomUUID();
         // pdf_file is expected as a base64 string, strip data URL prefix if present
         const base64Data = pdf_file.includes(',') ? pdf_file.split(',')[1] : pdf_file;
         const pdfBuffer = Buffer.from(base64Data, 'base64');

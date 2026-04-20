@@ -17,6 +17,7 @@ export function PublicCreatorProfile() {
     const [creatorEvents, setCreatorEvents] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadingFollow, setLoadingFollow] = useState(false);
+    const [followOffset, setFollowOffset] = useState(0);
     const [loadingActions, setLoadingActions] = useState<Record<string, boolean>>({});
 
     useEffect(() => {
@@ -76,9 +77,11 @@ export function PublicCreatorProfile() {
             try {
                 if (isFollowing) {
                     await unfollowCreator(creator.id);
+                    setFollowOffset(prev => prev - 1);
                     toast.info('Unfollowed creator');
                 } else {
                     await followCreator(creator.id);
+                    setFollowOffset(prev => prev + 1);
                     toast.success('Following creator');
                 }
             } catch (err) {
@@ -263,7 +266,7 @@ export function PublicCreatorProfile() {
                                     <Users className="h-6 w-6" />
                                 </div>
                                 <div>
-                                    <p className="text-2xl font-bold">{(creator.follower_count || 0) + (isFollowing ? 1 : 0)}</p>
+                                    <p className="text-2xl font-bold">{(creator.follower_count || 0) + followOffset}</p>
                                     <p className="text-sm text-muted-foreground">Followers</p>
                                 </div>
                             </div>
@@ -408,16 +411,13 @@ export function PublicCreatorProfile() {
                                         </div>
                                         <div className="col-span-2 sm:col-span-1">
                                             <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Date & Time</p>
-                                            <p className="font-medium flex flex-col gap-1.5 text-sm">
-                                                <span className="flex items-center gap-2">
-                                                    <Calendar className="h-4 w-4 text-muted-foreground shrink-0" /> 
-                                                    Start: {formatDate(selectedEvent.start_date)} {selectedEvent.start_time ? `at ${selectedEvent.start_time}` : ''}
-                                                </span>
-                                                <span className="flex items-center gap-2">
-                                                    <Calendar className="h-4 w-4 text-transparent shrink-0" /> 
-                                                    End: {formatDate(selectedEvent.end_date)} {selectedEvent.end_time ? `at ${selectedEvent.end_time}` : ''}
-                                                </span>
-                                            </p>
+                                            <div className="font-medium flex items-center gap-2 text-sm">
+                                                <Calendar className="h-4 w-4 text-muted-foreground shrink-0" /> 
+                                                <div className="flex flex-col gap-1.5">
+                                                    <span>Start: {formatDate(selectedEvent.start_date)} {selectedEvent.start_time ? `at ${selectedEvent.start_time}` : ''}</span>
+                                                    <span>End: {formatDate(selectedEvent.end_date)} {selectedEvent.end_time ? `at ${selectedEvent.end_time}` : ''}</span>
+                                                </div>
+                                            </div>
                                         </div>
                                         <div>
                                             <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Registration</p>
@@ -445,7 +445,7 @@ export function PublicCreatorProfile() {
                                             </div>
                                         )}
                                         
-                                        {selectedEvent.uni_exclusive && (
+                                        {!!selectedEvent.uni_exclusive && (
                                             <>
                                                 <div className="col-span-2 sm:col-span-1">
                                                     <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Responsible Lab</p>

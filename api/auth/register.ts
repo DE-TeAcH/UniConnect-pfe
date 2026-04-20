@@ -3,7 +3,7 @@ import db from '../config/database';
 import { runCors } from '../utils/cors';
 import { sendResponse } from '../utils/response';
 import bcrypt from 'bcryptjs';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (runCors(req, res)) return;
@@ -28,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return sendResponse(res, false, 'Username or email already exists', null, 409);
         }
 
-        const id = uuidv4();
+        const id = randomUUID();
         const password_hash = await bcrypt.hash(password, 10);
         const role = email.includes('@etu.') ? 'student' : 'teacher';
 

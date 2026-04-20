@@ -34,6 +34,7 @@ export function PublicCreators() {
     }, []);
 
     const [loadingActions, setLoadingActions] = useState<Record<string, boolean>>({});
+    const [followOffsets, setFollowOffsets] = useState<Record<string, number>>({});
 
     const handleFollow = (e: React.MouseEvent, creatorId: string | number) => {
         e.preventDefault();
@@ -43,9 +44,11 @@ export function PublicCreators() {
             try {
                 if (followedCreatorIds.includes(creatorId)) {
                     await unfollowCreator(creatorId);
+                    setFollowOffsets(prev => ({...prev, [creatorId]: (prev[creatorId] || 0) - 1}));
                     toast.info('Unfollowed creator');
                 } else {
                     await followCreator(creatorId);
+                    setFollowOffsets(prev => ({...prev, [creatorId]: (prev[creatorId] || 0) + 1}));
                     toast.success('Following creator');
                 }
             } catch (err) {
@@ -210,7 +213,7 @@ export function PublicCreators() {
                                             </div>
                                             <div className="text-center">
                                                 <p className="font-bold text-foreground text-sm sm:text-base">
-                                                    {(creator.follower_count || 0) + (isFollowing ? 1 : 0)}
+                                                    {(creator.follower_count || 0) + (followOffsets[creator.id] || 0)}
                                                 </p>
                                                 <p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wider">Followers</p>
                                             </div>
