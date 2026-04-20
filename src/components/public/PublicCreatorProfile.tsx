@@ -16,6 +16,8 @@ export function PublicCreatorProfile() {
     const [creator, setCreator] = useState<any | null>(null);
     const [creatorEvents, setCreatorEvents] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadingFollow, setLoadingFollow] = useState(false);
+    const [loadingActions, setLoadingActions] = useState<Record<string, boolean>>({});
 
     useEffect(() => {
         const fetchData = async () => {
@@ -67,8 +69,6 @@ export function PublicCreatorProfile() {
         sortedDisplayEvents.unshift(mostAttendedEvent);
     }
 
-    const [loadingFollow, setLoadingFollow] = useState(false);
-    const [loadingActions, setLoadingActions] = useState<Record<string, boolean>>({});
 
     const handleFollow = () => {
         requireLogin(async () => {

@@ -27,6 +27,15 @@ export function LoginPage({ onLogin }: LoginPageProps) {
 
       if (response.success && response.data) {
         const user = response.data;
+
+        if (!user.manage) {
+          toast.error("This isn't your place. Head to the public portal instead!", {
+            description: 'The management area is reserved for event creators and admins.',
+            duration: 5000,
+          });
+          return;
+        }
+
         onLogin(user.role, {
           id: user.id,
           username: user.username,

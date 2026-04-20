@@ -157,6 +157,7 @@ export function PublicAuth() {
             return;
         }
 
+        setIsLoading(true);
         try {
             const res = await api.auth.login(loginEmail, loginPassword);
             if (res.success && res.data) {
@@ -183,6 +184,8 @@ export function PublicAuth() {
         } catch (error) {
             console.error('Login error:', error);
             toast.error('An error occurred during login.');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -523,7 +526,7 @@ export function PublicAuth() {
                                                 <Input
                                                     id="register-email"
                                                     type="email"
-                                                    placeholder="name@university.edu"
+                                                    placeholder="University Mail"
                                                     value={registerEmail}
                                                     onChange={(e) => setRegisterEmail(e.target.value)}
                                                     className={!isRegisterEmailValid ? "border-red-500 text-red-500 focus-visible:ring-red-500" : ""}
@@ -538,7 +541,7 @@ export function PublicAuth() {
                                                     <Label htmlFor="register-faculty">Faculty</Label>
                                                     <Input
                                                         id="register-faculty"
-                                                        placeholder="e.g. Computer Science"
+                                                        placeholder="Faculty Name"
                                                         value={registerFaculty}
                                                         onChange={(e) => setRegisterFaculty(e.target.value)}
                                                         required
@@ -549,7 +552,7 @@ export function PublicAuth() {
                                                     <div className="relative">
                                                         <Input
                                                             id="register-username"
-                                                            placeholder="johndoe123"
+                                                            placeholder="Username"
                                                             value={registerUsername}
                                                             onChange={(e) => setRegisterUsername(e.target.value)}
                                                             className={`pr-8 ${usernameStatus === 'taken' ? 'border-red-500 focus-visible:ring-red-500 text-red-500' :
