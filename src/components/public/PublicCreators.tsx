@@ -185,7 +185,7 @@ export function PublicCreators() {
                         const creatorRole = creator.role === 'team_leader' ? 'team-leader' : creator.role;
 
                         return (
-                            <div key={creator.id} className="cursor-pointer w-full max-w-xl mx-auto sm:max-w-none" onClick={() => navigateTo('creator-profile', creator.id)}>
+                            <div key={creator.id} className="cursor-pointer w-[calc(100%-1rem)] mx-auto sm:w-full sm:max-w-none" onClick={() => navigateTo('creator-profile', creator.id)}>
                                 <Card className="w-full h-full hover:-translate-y-1 transition-transform duration-300 hover:shadow-lg border-muted group relative overflow-hidden">
                                     <div className={`h-16 sm:h-24 bg-gradient-to-br ${getRoleGradient(creatorRole)} absolute top-0 left-0 right-0`} />
 
