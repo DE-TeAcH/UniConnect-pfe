@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { PasswordInput } from './ui/password-input';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
@@ -45,6 +46,8 @@ export function MemberSettings({ currentUser, onLogout, onProfileUpdate }: Membe
         newPassword: '',
         confirmPassword: '',
     });
+    const [isCurrentPasswordVisible, setIsCurrentPasswordVisible] = useState(false);
+    const [isNewPasswordVisible, setIsNewPasswordVisible] = useState(false);
 
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
@@ -289,31 +292,34 @@ export function MemberSettings({ currentUser, onLogout, onProfileUpdate }: Membe
                         <div className="grid gap-4">
                             <div className="grid gap-2">
                                 <Label htmlFor="current-password">Current Password</Label>
-                                <Input
+                                <PasswordInput
                                     id="current-password"
-                                    type="password"
                                     value={passwordData.currentPassword}
                                     onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                                    visible={isCurrentPasswordVisible}
+                                    onVisibleChange={setIsCurrentPasswordVisible}
                                     placeholder="Enter current password"
                                 />
                             </div>
                             <div className="grid gap-2">
                                 <Label htmlFor="new-password">New Password</Label>
-                                <Input
+                                <PasswordInput
                                     id="new-password"
-                                    type="password"
                                     value={passwordData.newPassword}
                                     onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                                    visible={isNewPasswordVisible}
+                                    onVisibleChange={setIsNewPasswordVisible}
                                     placeholder="Enter new password"
                                 />
                             </div>
                             <div className="grid gap-2">
                                 <Label htmlFor="confirm-password">Confirm New Password</Label>
-                                <Input
+                                <PasswordInput
                                     id="confirm-password"
-                                    type="password"
                                     value={passwordData.confirmPassword}
                                     onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                                    visible={isNewPasswordVisible}
+                                    onVisibleChange={setIsNewPasswordVisible}
                                     placeholder="Confirm new password"
                                 />
                             </div>

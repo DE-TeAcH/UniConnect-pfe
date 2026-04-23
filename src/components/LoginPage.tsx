@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { PasswordInput } from './ui/password-input';
 import { toast } from 'sonner';
 import { api } from '../services/api';
 import { Loader2 } from 'lucide-react';
@@ -16,6 +17,7 @@ interface LoginPageProps {
 export function LoginPage({ onLogin }: LoginPageProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -79,7 +81,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
-                  <Input id="password" type="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} required disabled={isLoading} />
+                  <PasswordInput id="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} visible={isPasswordVisible} onVisibleChange={setIsPasswordVisible} required disabled={isLoading} />
                 </div>
 
                 <Button type="submit" className="w-full bg-gradient-to-br from-blue-600 to-purple-700 rounded-2xl mb-4" disabled={isLoading}>

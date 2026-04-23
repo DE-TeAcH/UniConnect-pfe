@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { PasswordInput } from '../ui/password-input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { GraduationCap, ArrowRight, UserPlus, LogIn, ArrowLeft, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
@@ -20,6 +21,7 @@ export function PublicAuth() {
     // Login State
     const [loginEmail, setLoginEmail] = useState('');
     const [loginPassword, setLoginPassword] = useState('');
+    const [isLoginPasswordVisible, setIsLoginPasswordVisible] = useState(false);
 
     // Register State
     const [registerName, setRegisterName] = useState('');
@@ -28,6 +30,7 @@ export function PublicAuth() {
     const [registerUsername, setRegisterUsername] = useState('');
     const [registerPassword, setRegisterPassword] = useState('');
     const [registerConfirmPassword, setRegisterConfirmPassword] = useState('');
+    const [isRegisterPasswordVisible, setIsRegisterPasswordVisible] = useState(false);
     const [registerBacYear, setRegisterBacYear] = useState('');
     const [registerBacMatricule, setRegisterBacMatricule] = useState('');
     const [pinSent, setPinSent] = useState(false);
@@ -48,6 +51,7 @@ export function PublicAuth() {
     const [isForgotPinVerified, setIsForgotPinVerified] = useState(false);
     const [newPassword, setNewPassword] = useState('');
     const [confirmNewPassword, setConfirmNewPassword] = useState('');
+    const [isResetPasswordVisible, setIsResetPasswordVisible] = useState(false);
 
     const isRegisterEmailValid = registerEmail === '' || registerEmail.endsWith('@univ-mosta.dz') || registerEmail.endsWith('@etu.univ-mosta.dz');
     const isForgotEmailValid = forgotPasswordEmail === '' || forgotPasswordEmail.endsWith('@univ-mosta.dz') || forgotPasswordEmail.endsWith('@etu.univ-mosta.dz');
@@ -367,12 +371,13 @@ export function PublicAuth() {
                                                     <Label htmlFor="login-password">Password</Label>
                                                     <Button variant="link" className="p-0 h-auto text-xs font-normal" type="button" onClick={() => setIsForgotPassword(true)}>Forgot password?</Button>
                                                 </div>
-                                                <Input
+                                                <PasswordInput
                                                     id="login-password"
-                                                    type="password"
                                                     placeholder="Enter your password"
                                                     value={loginPassword}
                                                     onChange={(e) => setLoginPassword(e.target.value)}
+                                                    visible={isLoginPasswordVisible}
+                                                    onVisibleChange={setIsLoginPasswordVisible}
                                                     required
                                                 />
                                             </div>
@@ -429,21 +434,23 @@ export function PublicAuth() {
                                             </div>
                                             <div className="space-y-2">
                                                 <Label htmlFor="forgot-new-password">New Password</Label>
-                                                <Input
+                                                <PasswordInput
                                                     id="forgot-new-password"
-                                                    type="password"
                                                     value={newPassword}
                                                     onChange={(e) => setNewPassword(e.target.value)}
+                                                    visible={isResetPasswordVisible}
+                                                    onVisibleChange={setIsResetPasswordVisible}
                                                     required
                                                 />
                                             </div>
                                             <div className="space-y-2">
                                                 <Label htmlFor="forgot-confirm-password">Confirm New Password</Label>
-                                                <Input
+                                                <PasswordInput
                                                     id="forgot-confirm-password"
-                                                    type="password"
                                                     value={confirmNewPassword}
                                                     onChange={(e) => setConfirmNewPassword(e.target.value)}
+                                                    visible={isResetPasswordVisible}
+                                                    onVisibleChange={setIsResetPasswordVisible}
                                                     className={confirmNewPassword && confirmNewPassword !== newPassword ? "border-red-500 focus-visible:ring-red-500 text-red-500" : ""}
                                                     required
                                                 />
@@ -617,21 +624,23 @@ export function PublicAuth() {
                                             )}
                                             <div className="space-y-2">
                                                 <Label htmlFor="register-password">Password</Label>
-                                                <Input
+                                                <PasswordInput
                                                     id="register-password"
-                                                    type="password"
                                                     value={registerPassword}
                                                     onChange={(e) => setRegisterPassword(e.target.value)}
+                                                    visible={isRegisterPasswordVisible}
+                                                    onVisibleChange={setIsRegisterPasswordVisible}
                                                     required
                                                 />
                                             </div>
                                             <div className="space-y-2">
                                                 <Label htmlFor="register-confirm">Confirm Password</Label>
-                                                <Input
+                                                <PasswordInput
                                                     id="register-confirm"
-                                                    type="password"
                                                     value={registerConfirmPassword}
                                                     onChange={(e) => setRegisterConfirmPassword(e.target.value)}
+                                                    visible={isRegisterPasswordVisible}
+                                                    onVisibleChange={setIsRegisterPasswordVisible}
                                                     className={registerConfirmPassword && registerConfirmPassword !== registerPassword ? "border-red-500 focus-visible:ring-red-500 text-red-500" : ""}
                                                     required
                                                 />
