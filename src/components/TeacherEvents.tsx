@@ -553,7 +553,7 @@ export function TeacherEvents({ currentUser }: TeacherEventsProps) {
                                             { label: 'Location', value: selectedEvent.location },
                                             { label: 'Start', value: `${formatDate(selectedEvent.start_date)}${selectedEvent.start_time ? ' at ' + selectedEvent.start_time : ''}` },
                                             { label: 'End', value: `${formatDate(selectedEvent.end_date)}${selectedEvent.end_time ? ' at ' + selectedEvent.end_time : ''}` },
-                                            { label: 'Registrations', value: (selectedEvent.registration_count || 0).toString() },
+                                            { label: 'Applicants', value: (selectedEvent.registration_count || 0).toString() },
                                             { label: 'Category', value: selectedEvent.category_name || '—' },
                                             { label: 'Type', value: selectedEvent.is_paid ? `Paid – ${selectedEvent.price} DZD` : 'Free' },
                                         ].map(({ label, value }) => (

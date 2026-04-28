@@ -438,7 +438,7 @@ export function PublicCreatorProfile() {
                                             </div>
                                         ) : (
                                             <div>
-                                                <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Registrations</p>
+                                                <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Applicants</p>
                                                 <p className="font-medium flex items-center gap-2">
                                                     <Users className="h-4 w-4 text-muted-foreground" /> {selectedEvent.registration_count || 0}{selectedEvent.max_seats ? ` / ${selectedEvent.max_seats}` : ''} Registered
                                                 </p>

@@ -122,7 +122,35 @@ export default function ManagementPortal() {
         }
     };
 
+    // Initial history setup if not on dashboard
+    useEffect(() => {
+        if (currentPage !== 'dashboard') {
+            window.history.replaceState({ base: true }, '');
+            window.history.pushState({ isDummy: true }, '');
+        }
+    }, []);
+
+    // Handle back button (popstate)
+    useEffect(() => {
+        const handlePopState = () => {
+            if (currentPage !== 'dashboard') {
+                setCurrentPage('dashboard');
+                localStorage.setItem(PAGE_STORAGE_KEY, 'dashboard');
+            }
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [currentPage]);
+
     const handleNavigate = (page: string) => {
+        if (page === 'dashboard' && currentPage !== 'dashboard') {
+            window.history.back();
+        } else if (page !== 'dashboard' && currentPage === 'dashboard') {
+            window.history.pushState({ isDummy: true }, '');
+        } else if (page !== 'dashboard' && currentPage !== 'dashboard') {
+            window.history.replaceState({ isDummy: true }, '');
+        }
+        
         setCurrentPage(page);
         localStorage.setItem(PAGE_STORAGE_KEY, page);
     };

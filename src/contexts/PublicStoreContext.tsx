@@ -196,7 +196,37 @@ export function PublicStoreProvider({ children }: { children: React.ReactNode })
     const [currentView, setCurrentView] = useState<PublicView>('dashboard');
     const [currentEntityId, setCurrentEntityId] = useState<string | number | null>(null);
 
+    // Initial history setup if not on dashboard (though PublicStore always starts on dashboard)
+    useEffect(() => {
+        if (currentView !== 'dashboard') {
+            window.history.replaceState({ base: true }, '');
+            window.history.pushState({ isDummy: true }, '');
+        }
+    }, []);
+
+    // Handle back button (popstate)
+    useEffect(() => {
+        const handlePopState = () => {
+            if (currentView !== 'dashboard') {
+                setCurrentView('dashboard');
+            }
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [currentView]);
+
     const navigateTo = (view: PublicView, entityId?: string | number) => {
+        if (view === 'dashboard' && currentView !== 'dashboard') {
+            // Go back in history to remove the dummy state
+            window.history.back();
+        } else if (view !== 'dashboard' && currentView === 'dashboard') {
+            // Moving away from dashboard, push a dummy state
+            window.history.pushState({ isDummy: true }, '');
+        } else if (view !== 'dashboard' && currentView !== 'dashboard') {
+            // Moving between non-dashboard views, replace dummy state
+            window.history.replaceState({ isDummy: true }, '');
+        }
+
         setCurrentView(view);
         setCurrentEntityId(entityId || null);
     };
