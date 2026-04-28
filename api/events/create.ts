@@ -4,6 +4,7 @@ import { runCors } from '../utils/cors';
 import { sendResponse } from '../utils/response';
 import { randomUUID } from 'crypto';
 import { verifyEventPDF } from '../utils/aiVerify';
+import { sendCreatorEventEmail } from '../utils/email';
 
 export const config = {
     api: {
@@ -114,6 +115,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     );
                 }
             }
+        }
+
+        // Fetch followers to send notifications
+        try {
+            const [followers]: any = await conn.execute(
+                `SELECT u.email FROM follows f 
+                 JOIN users u ON f.follower_id = u.id 
+                 WHERE f.creator_id = ? AND u.receive_notifications = TRUE`,
+                [creator_id]
+            );
+            
+            if (followers.length > 0) {
+                const bccEmails = followers.map((f: any) => f.email);
+                
+                // Get creator name for email
+                let creatorNameForEmail = 'A creator you follow';
+                try {
+                    const [creatorRes]: any = await conn.execute('SELECT name FROM users WHERE id = ?', [creator_id]);
+                    if (creatorRes.length > 0) creatorNameForEmail = creatorRes[0].name;
+                } catch (_) {}
+
+                // Non-blocking email sending
+                sendCreatorEventEmail(bccEmails, creatorNameForEmail, title, start_date).catch(e => console.error('Failed to send follower emails:', e));
+            }
+        } catch (e) {
+            console.error('Followers notification error:', e);
         }
 
         sendResponse(res, true, 'Event created', { id, title }, 201);

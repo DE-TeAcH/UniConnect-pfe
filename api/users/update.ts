@@ -12,7 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (!id) return sendResponse(res, false, 'Missing user id', null, 400);
 
-    const allowedFields = ['role', 'name', 'email', 'username', 'affiliation', 'team_id', 'bac_matricule', 'bac_year', 'manage', 'password'];
+    const allowedFields = ['role', 'name', 'email', 'username', 'affiliation', 'team_id', 'bac_matricule', 'bac_year', 'manage', 'password', 'receive_notifications'];
     const setClauses: string[] = [];
     const params: any[] = [];
 

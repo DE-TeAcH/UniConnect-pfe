@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import db from '../config/database';
 import { runCors } from '../utils/cors';
 import { sendResponse } from '../utils/response';
+import { sendApplicationConfirmationEmail } from '../utils/email';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (runCors(req, res)) return;
@@ -41,6 +42,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             'INSERT INTO event_registrations (event_id, user_id) VALUES (?, ?)',
             [event_id, user_id]
         );
+
+        // Fetch user and event details to send email
+        try {
+            const [users]: any = await conn.execute('SELECT email, receive_notifications FROM users WHERE id = ?', [user_id]);
+            const [events]: any = await conn.execute('SELECT title, start_date, start_time, location FROM events WHERE id = ?', [event_id]);
+            
+            if (users.length > 0 && events.length > 0) {
+                const user = users[0];
+                const eventInfo = events[0];
+                if (user.receive_notifications) {
+                    sendApplicationConfirmationEmail(
+                        user.email,
+                        eventInfo.title,
+                        eventInfo.start_date,
+                        eventInfo.location,
+                        eventInfo.start_time
+                    ).catch(e => console.error('Failed to send application confirmation email:', e));
+                }
+            }
+        } catch (e) {
+            console.error('Confirmation notification error:', e);
+        }
 
         sendResponse(res, true, 'Registered successfully', null, 201);
     } catch (err) {

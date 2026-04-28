@@ -12,6 +12,7 @@ export interface PublicUser {
     username?: string;
     manage?: boolean | number;
     affiliation?: string;
+    receive_notifications?: boolean | number;
 }
 
 export type PublicView = 'dashboard' | 'events' | 'creators' | 'history' | 'settings' | 'creator-profile';

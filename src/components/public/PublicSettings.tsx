@@ -44,7 +44,26 @@ export function PublicSettings() {
     const [isCurrentPasswordVisible, setIsCurrentPasswordVisible] = useState(false);
     const [isNewPasswordVisible, setIsNewPasswordVisible] = useState(false);
 
-    const [notifications, setNotifications] = useState(true);
+    const [notifications, setNotifications] = useState(user.receive_notifications !== false && user.receive_notifications !== 0);
+
+    const handleToggleNotifications = async (checked: boolean) => {
+        setNotifications(checked);
+        try {
+            const res = await api.users.update(String(user.id), {
+                receive_notifications: checked ? 1 : 0
+            });
+            if (res.success) {
+                login({ ...user, receive_notifications: checked ? 1 : 0 });
+                toast.success('Notification preferences updated');
+            } else {
+                setNotifications(!checked); // Revert on failure
+                toast.error(res.message || 'Failed to update preferences');
+            }
+        } catch (err) {
+            setNotifications(!checked); // Revert on failure
+            toast.error('An error occurred while updating preferences');
+        }
+    };
 
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
@@ -310,7 +329,7 @@ export function PublicSettings() {
                                 <Label className="text-base font-medium">Email Notifications</Label>
                                 <p className="text-sm text-muted-foreground mr-4">Receive emails about upcoming events you've applied to and creator updates.</p>
                             </div>
-                            <Switch checked={notifications} onCheckedChange={setNotifications} />
+                            <Switch checked={notifications} onCheckedChange={handleToggleNotifications} />
                         </div>
                     </CardContent>
                 </Card>

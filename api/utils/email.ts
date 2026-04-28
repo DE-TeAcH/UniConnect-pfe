@@ -54,3 +54,58 @@ export async function sendPinEmail(to: string, pin: string, purpose: 'register' 
         html,
     });
 }
+
+export async function sendCreatorEventEmail(bccEmails: string[], creatorName: string, eventTitle: string, eventStartDate: string) {
+    if (!emailUser || !emailPass || !emailFrom || bccEmails.length === 0) return;
+
+    const subject = `UniConnect - New Event from ${creatorName}!`;
+    const html = `
+    <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; background: #ffffff; border-radius: 16px; border: 1px solid #e5e7eb; overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #2563eb, #7c3aed); padding: 24px; text-align: center;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 20px;">New Event!</h1>
+        </div>
+        <div style="padding: 24px;">
+            <p>Hello,</p>
+            <p>The creator you follow, <strong>${creatorName}</strong>, has just created a new event:</p>
+            <h2 style="color: #2563eb; margin: 16px 0;">${eventTitle}</h2>
+            <p>Registrations are now open and will be available until the starting date: <strong>${new Date(eventStartDate).toLocaleDateString()}</strong>.</p>
+            <p>Check out the application to secure your spot!</p>
+        </div>
+    </div>`;
+
+    await transporter.sendMail({
+        from: `"UniConnect" <${emailFrom}>`,
+        bcc: bccEmails,
+        subject,
+        html,
+    });
+}
+
+export async function sendApplicationConfirmationEmail(to: string, eventTitle: string, startDate: string, location: string, time: string) {
+    if (!emailUser || !emailPass || !emailFrom) return;
+
+    const subject = `UniConnect - Application Confirmed for ${eventTitle}`;
+    const html = `
+    <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; background: #ffffff; border-radius: 16px; border: 1px solid #e5e7eb; overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #10b981, #047857); padding: 24px; text-align: center;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 20px;">Application Confirmed!</h1>
+        </div>
+        <div style="padding: 24px;">
+            <p>Congratulations! You have successfully applied to the following event:</p>
+            <h2 style="color: #047857; margin: 16px 0;">\${eventTitle}</h2>
+            <div style="background: #f3f4f6; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                <p style="margin: 0 0 8px;"><strong>Date:</strong> \${new Date(startDate).toLocaleDateString()}</p>
+                <p style="margin: 0 0 8px;"><strong>Time:</strong> \${time}</p>
+                <p style="margin: 0;"><strong>Location:</strong> \${location}</p>
+            </div>
+            <p>We are excited to see you there! Be sure to mark your calendar.</p>
+        </div>
+    </div>`;
+
+    await transporter.sendMail({
+        from: `"UniConnect" <${emailFrom}>`,
+        to,
+        subject,
+        html,
+    });
+}
