@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Input } from '../ui/input';
-import { Calendar, MapPin, CheckCircle2, Clock, Search, Heart, User, Users, ArrowUpRight, Building, Loader2 } from 'lucide-react';
+import { Calendar, MapPin, CheckCircle2, Clock, Search, Heart, User, Users, ArrowUpRight, Building, Loader2, ChevronDown } from 'lucide-react';
 import { usePublicStore } from '../../contexts/PublicStoreContext';
 import { api } from '../../services/api';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
@@ -215,7 +215,7 @@ export function PublicHistory() {
                             <h3 className="font-bold text-xl">{event.title}</h3>
 
                             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                                <span className="flex items-center gap-1"><Calendar className="h-4 w-4" /> {event.start_date} • {event.start_time}</span>
+                                <span className="flex items-center gap-1"><Calendar className="h-4 w-4" /> {formatDate(event.start_date)} • {event.start_time}</span>
                                 <span className="flex items-center gap-1"><MapPin className="h-4 w-4" /> {event.location}</span>
                             </div>
                         </div>
@@ -257,21 +257,36 @@ export function PublicHistory() {
                         <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 bg-background h-9 border-muted-foreground/20" />
                     </div>
-                    <select value={category} onChange={e => setCategory(e.target.value)} className="flex h-9 w-full items-center justify-between rounded-md border border-muted-foreground/20 bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-                        {['All', 'Conference', 'Workshop', 'Seminar', 'Competition', 'Networking', 'Training', 'Open Day', 'Special'].map(c => <option key={c} value={c}>{c === 'All' ? 'Category' : c}</option>)}
-                    </select>
-                    <select value={creatorType} onChange={e => setCreatorType(e.target.value)} className="flex h-9 w-full items-center justify-between rounded-md border border-muted-foreground/20 bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-                        {['All', 'Teacher', 'Company', 'Club'].map(c => <option key={c} value={c}>{c === 'All' ? 'Creator Type' : c}</option>)}
-                    </select>
-                    <select value={paymentType} onChange={e => setPaymentType(e.target.value)} disabled={viewMode === 'applied' || viewMode === 'visited'} className="flex h-9 w-full items-center justify-between rounded-md border border-muted-foreground/20 bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-                        {['All', 'Free', 'Paid'].map(c => <option key={c} value={c}>{c === 'All' ? 'Free / Paid' : c}</option>)}
-                    </select>
-                    <select value={eventStatus} onChange={e => setEventStatus(e.target.value)} className="flex h-9 w-full items-center justify-between rounded-md border border-muted-foreground/20 bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-                        {['All', 'Completed', 'Active', 'Upcoming'].map(c => <option key={c} value={c}>{c === 'All' ? 'Status' : c}</option>)}
-                    </select>
-                    <select value={sortBy} onChange={e => setSortBy(e.target.value)} disabled={eventStatus !== 'All'} className="flex h-9 w-full items-center justify-between rounded-md border border-muted-foreground/20 bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-                        {['Most Attended', 'Newest', 'Upcoming Soon', 'Oldest', 'Price Low to High', 'Price High to Low'].map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
+                    <div className="relative">
+                        <select value={category} onChange={e => setCategory(e.target.value)} className="flex h-9 w-full items-center justify-between rounded-md border border-muted-foreground/20 bg-background px-3 py-0 pr-8 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 appearance-none leading-none">
+                            {['All', 'Conference', 'Workshop', 'Seminar', 'Competition', 'Networking', 'Training', 'Open Day', 'Special'].map(c => <option key={c} value={c}>{c === 'All' ? 'Category' : c}</option>)}
+                        </select>
+                        <ChevronDown className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    </div>
+                    <div className="relative">
+                        <select value={creatorType} onChange={e => setCreatorType(e.target.value)} className="flex h-9 w-full items-center justify-between rounded-md border border-muted-foreground/20 bg-background px-3 py-0 pr-8 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 appearance-none leading-none">
+                            {['All', 'Teacher', 'Company', 'Club'].map(c => <option key={c} value={c}>{c === 'All' ? 'Creator Type' : c}</option>)}
+                        </select>
+                        <ChevronDown className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    </div>
+                    <div className="relative">
+                        <select value={paymentType} onChange={e => setPaymentType(e.target.value)} disabled={viewMode === 'applied' || viewMode === 'visited'} className="flex h-9 w-full items-center justify-between rounded-md border border-muted-foreground/20 bg-background px-3 py-0 pr-8 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 appearance-none leading-none">
+                            {['All', 'Free', 'Paid'].map(c => <option key={c} value={c}>{c === 'All' ? 'Free / Paid' : c}</option>)}
+                        </select>
+                        <ChevronDown className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    </div>
+                    <div className="relative">
+                        <select value={eventStatus} onChange={e => setEventStatus(e.target.value)} className="flex h-9 w-full items-center justify-between rounded-md border border-muted-foreground/20 bg-background px-3 py-0 pr-8 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 appearance-none leading-none">
+                            {['All', 'Completed', 'Active', 'Upcoming'].map(c => <option key={c} value={c}>{c === 'All' ? 'Status' : c}</option>)}
+                        </select>
+                        <ChevronDown className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    </div>
+                    <div className="relative">
+                        <select value={sortBy} onChange={e => setSortBy(e.target.value)} disabled={eventStatus !== 'All'} className="flex h-9 w-full items-center justify-between rounded-md border border-muted-foreground/20 bg-background px-3 py-0 pr-8 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 appearance-none leading-none">
+                            {['Most Attended', 'Newest', 'Upcoming Soon', 'Oldest', 'Price Low to High', 'Price High to Low'].map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                        <ChevronDown className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    </div>
                 </div>
             </div>
 

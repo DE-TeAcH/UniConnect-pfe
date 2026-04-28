@@ -6,7 +6,7 @@ import { api } from '../../services/api';
 import { toast } from 'sonner';
 import { useState, useMemo, useEffect } from 'react';
 import { Input } from '../ui/input';
-import { Loader2, Search } from 'lucide-react';
+import { Loader2, Search, ChevronDown } from 'lucide-react';
 
 export function PublicCreators() {
     const { user, requireLogin, followCreator, unfollowCreator, followedCreatorIds, navigateTo } = usePublicStore();
@@ -154,19 +154,25 @@ export function PublicCreators() {
                     </div>
 
                     <div className="flex gap-4 w-full md:w-auto">
-                        <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} className="flex h-11 w-full md:w-36 items-center justify-between rounded-md border border-muted-foreground/20 bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-                            <option value="all">Role</option>
-                            <option value="company">Companies</option>
-                            <option value="teacher">Teachers</option>
-                            <option value="team-leader">Teams</option>
-                        </select>
+                        <div className="relative flex-1 md:flex-none">
+                            <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} className="flex h-11 w-full md:w-36 items-center justify-between rounded-md border border-muted-foreground/20 bg-background px-3 py-2 pr-8 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 appearance-none">
+                                <option value="all">Role</option>
+                                <option value="company">Companies</option>
+                                <option value="teacher">Teachers</option>
+                                <option value="team-leader">Teams</option>
+                            </select>
+                            <ChevronDown className="absolute right-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                        </div>
 
-                        <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="flex h-11 w-full md:w-44 items-center justify-between rounded-md border border-muted-foreground/20 bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-                            <option value="name-asc">Name (A-Z)</option>
-                            <option value="name-desc">Name (Z-A)</option>
-                            <option value="events-desc">Most Events</option>
-                            <option value="followers-desc">Most Followers</option>
-                        </select>
+                        <div className="relative flex-1 md:flex-none">
+                            <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="flex h-11 w-full md:w-44 items-center justify-between rounded-md border border-muted-foreground/20 bg-background px-3 py-2 pr-8 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 appearance-none">
+                                <option value="name-asc">Name (A-Z)</option>
+                                <option value="name-desc">Name (Z-A)</option>
+                                <option value="events-desc">Most Events</option>
+                                <option value="followers-desc">Most Followers</option>
+                            </select>
+                            <ChevronDown className="absolute right-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                        </div>
                     </div>
                 </div>
             </div>
