@@ -46,6 +46,24 @@ export function PublicSettings() {
 
     const [notifications, setNotifications] = useState(user.receive_notifications !== false && user.receive_notifications !== 0);
 
+    // Sync state with backend on mount
+    React.useEffect(() => {
+        const fetchUserData = async () => {
+            try {
+                const res = await api.users.get({ id: String(user.id) });
+                if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+                    const freshUser = res.data[0];
+                    const isEnabled = freshUser.receive_notifications !== 0 && freshUser.receive_notifications !== false;
+                    setNotifications(isEnabled);
+                    if (user.receive_notifications !== isEnabled) {
+                        login({ ...user, receive_notifications: isEnabled });
+                    }
+                }
+            } catch (err) {}
+        };
+        fetchUserData();
+    }, [user.id]);
+
     const handleToggleNotifications = async (checked: boolean) => {
         setNotifications(checked);
         try {

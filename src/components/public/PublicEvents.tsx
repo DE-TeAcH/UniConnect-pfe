@@ -3,7 +3,7 @@ import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
-import { Search, Calendar, MapPin, User, Users, Heart, ArrowUpRight, CheckCircle2, Building, Loader2 } from 'lucide-react';
+import { Search, Calendar, MapPin, User, Users, Heart, ArrowUpRight, CheckCircle2, Building, Loader2, ChevronDown } from 'lucide-react';
 import { api } from '../../services/api';
 import { usePublicStore } from '../../contexts/PublicStoreContext';
 import { toast } from 'sonner';
@@ -220,22 +220,37 @@ export function PublicEvents() {
                         <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 bg-background h-9 border-muted-foreground/20" />
                     </div>
-                    <select value={category} onChange={e => setCategory(e.target.value)} className="h-9 w-full appearance-none rounded-md border border-muted-foreground/20 bg-background px-3 py-0 text-sm leading-none text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-                        <option value="All">All Categories</option>
-                        {categories.map(c => <option key={c.id} value={c.id}>{c.name}{c.uni_exclusive ? ' (Exclusive)' : ''}</option>)}
-                    </select>
-                    <select value={creatorType} onChange={e => setCreatorType(e.target.value)} className="h-9 w-full appearance-none rounded-md border border-muted-foreground/20 bg-background px-3 py-0 text-sm leading-none text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-                        {['All', 'Teacher', 'Company', 'Club'].map(c => <option key={c} value={c}>{c === 'All' ? 'Creator Type' : c}</option>)}
-                    </select>
-                    <select value={paymentType} onChange={e => setPaymentType(e.target.value)} className="h-9 w-full appearance-none rounded-md border border-muted-foreground/20 bg-background px-3 py-0 text-sm leading-none text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-                        {['All', 'Free', 'Paid'].map(c => <option key={c} value={c}>{c === 'All' ? 'Free / Paid' : c}</option>)}
-                    </select>
-                    <select value={eventStatus} onChange={e => setEventStatus(e.target.value)} className="h-9 w-full appearance-none rounded-md border border-muted-foreground/20 bg-background px-3 py-0 text-sm leading-none text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-                        {['All', 'Completed', 'Active', 'Upcoming'].map(c => <option key={c} value={c}>{c === 'All' ? 'Status' : c}</option>)}
-                    </select>
-                    <select value={sortBy} onChange={e => setSortBy(e.target.value)} disabled={eventStatus !== 'All'} className="h-9 w-full appearance-none rounded-md border border-muted-foreground/20 bg-background px-3 py-0 text-sm leading-none text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-                        {['Most Attended', 'Newest', 'Upcoming Soon', 'Oldest', 'Price Low to High', 'Price High to Low'].map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
+                    <div className="relative">
+                        <select value={category} onChange={e => setCategory(e.target.value)} className="h-9 w-full appearance-none rounded-md border border-muted-foreground/20 bg-background px-3 py-0 pr-8 text-sm leading-none text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                            <option value="All">All Categories</option>
+                            {categories.map(c => <option key={c.id} value={c.id}>{c.name}{c.uni_exclusive ? ' (Exclusive)' : ''}</option>)}
+                        </select>
+                        <ChevronDown className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    </div>
+                    <div className="relative">
+                        <select value={creatorType} onChange={e => setCreatorType(e.target.value)} className="h-9 w-full appearance-none rounded-md border border-muted-foreground/20 bg-background px-3 py-0 pr-8 text-sm leading-none text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                            {['All', 'Teacher', 'Company', 'Club'].map(c => <option key={c} value={c}>{c === 'All' ? 'Creator Type' : c}</option>)}
+                        </select>
+                        <ChevronDown className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    </div>
+                    <div className="relative">
+                        <select value={paymentType} onChange={e => setPaymentType(e.target.value)} className="h-9 w-full appearance-none rounded-md border border-muted-foreground/20 bg-background px-3 py-0 pr-8 text-sm leading-none text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                            {['All', 'Free', 'Paid'].map(c => <option key={c} value={c}>{c === 'All' ? 'Free / Paid' : c}</option>)}
+                        </select>
+                        <ChevronDown className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    </div>
+                    <div className="relative">
+                        <select value={eventStatus} onChange={e => setEventStatus(e.target.value)} className="h-9 w-full appearance-none rounded-md border border-muted-foreground/20 bg-background px-3 py-0 pr-8 text-sm leading-none text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                            {['All', 'Completed', 'Active', 'Upcoming'].map(c => <option key={c} value={c}>{c === 'All' ? 'Status' : c}</option>)}
+                        </select>
+                        <ChevronDown className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    </div>
+                    <div className="relative">
+                        <select value={sortBy} onChange={e => setSortBy(e.target.value)} disabled={eventStatus !== 'All'} className="h-9 w-full appearance-none rounded-md border border-muted-foreground/20 bg-background px-3 py-0 pr-8 text-sm leading-none text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                            {['Most Attended', 'Newest', 'Upcoming Soon', 'Oldest', 'Price Low to High', 'Price High to Low'].map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                        <ChevronDown className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    </div>
                 </div>
             </div>
 

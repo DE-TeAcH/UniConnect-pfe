@@ -9,7 +9,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const { role, team_id, id, email, username } = req.query;
 
-    let query = `SELECT u.id, u.role, u.name as full_name, u.email, u.username, u.affiliation as faculty, u.team_id, u.bac_matricule, u.bac_year, u.manage, u.created_at,
+    let query = `SELECT u.id, u.role, u.name as full_name, u.email, u.username, u.affiliation as faculty, u.team_id, u.bac_matricule, u.bac_year, u.manage, u.receive_notifications, u.created_at,
                         t.name AS team_name, t.location,
                         (SELECT COUNT(*) FROM events e WHERE e.creator_id = u.id) AS event_count,
                         (SELECT COUNT(*) FROM follow_creators f WHERE f.creator_id = u.id) AS follower_count
