@@ -196,39 +196,30 @@ export function PublicStoreProvider({ children }: { children: React.ReactNode })
     const [currentView, setCurrentView] = useState<PublicView>('dashboard');
     const [currentEntityId, setCurrentEntityId] = useState<string | number | null>(null);
 
-    // Initial history setup if not on dashboard (though PublicStore always starts on dashboard)
+    // Initial history setup
     useEffect(() => {
-        if (currentView !== 'dashboard') {
-            window.history.replaceState({ base: true }, '');
-            window.history.pushState({ isDummy: true }, '');
-        }
+        window.history.replaceState({ view: currentView, entityId: currentEntityId }, '', window.location.href);
     }, []);
 
     // Handle back button (popstate)
     useEffect(() => {
-        const handlePopState = () => {
-            if (currentView !== 'dashboard') {
-                setCurrentView('dashboard');
+        const handlePopState = (e: PopStateEvent) => {
+            if (e.state && e.state.view) {
+                setCurrentView(e.state.view);
+                setCurrentEntityId(e.state.entityId || null);
             }
         };
         window.addEventListener('popstate', handlePopState);
         return () => window.removeEventListener('popstate', handlePopState);
-    }, [currentView]);
+    }, []);
 
     const navigateTo = (view: PublicView, entityId?: string | number) => {
-        if (view === 'dashboard' && currentView !== 'dashboard') {
-            // Go back in history to remove the dummy state
-            window.history.back();
-        } else if (view !== 'dashboard' && currentView === 'dashboard') {
-            // Moving away from dashboard, push a dummy state
-            window.history.pushState({ isDummy: true }, '');
-        } else if (view !== 'dashboard' && currentView !== 'dashboard') {
-            // Moving between non-dashboard views, replace dummy state
-            window.history.replaceState({ isDummy: true }, '');
+        // Prevent pushing duplicate consecutive states
+        if (view !== currentView || entityId !== currentEntityId) {
+            window.history.pushState({ view, entityId }, '', window.location.href);
+            setCurrentView(view);
+            setCurrentEntityId(entityId || null);
         }
-
-        setCurrentView(view);
-        setCurrentEntityId(entityId || null);
     };
 
     const requireLogin = (action: () => void) => {

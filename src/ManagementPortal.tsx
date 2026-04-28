@@ -122,37 +122,30 @@ export default function ManagementPortal() {
         }
     };
 
-    // Initial history setup if not on dashboard
+    // Initial history setup
     useEffect(() => {
-        if (currentPage !== 'dashboard') {
-            window.history.replaceState({ base: true }, '');
-            window.history.pushState({ isDummy: true }, '');
-        }
+        window.history.replaceState({ page: currentPage }, '', window.location.href);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Handle back button (popstate)
     useEffect(() => {
-        const handlePopState = () => {
-            if (currentPage !== 'dashboard') {
-                setCurrentPage('dashboard');
-                localStorage.setItem(PAGE_STORAGE_KEY, 'dashboard');
+        const handlePopState = (e: PopStateEvent) => {
+            if (e.state && e.state.page) {
+                setCurrentPage(e.state.page);
+                localStorage.setItem(PAGE_STORAGE_KEY, e.state.page);
             }
         };
         window.addEventListener('popstate', handlePopState);
         return () => window.removeEventListener('popstate', handlePopState);
-    }, [currentPage]);
+    }, []);
 
     const handleNavigate = (page: string) => {
-        if (page === 'dashboard' && currentPage !== 'dashboard') {
-            window.history.back();
-        } else if (page !== 'dashboard' && currentPage === 'dashboard') {
-            window.history.pushState({ isDummy: true }, '');
-        } else if (page !== 'dashboard' && currentPage !== 'dashboard') {
-            window.history.replaceState({ isDummy: true }, '');
+        if (page !== currentPage) {
+            window.history.pushState({ page }, '', window.location.href);
+            setCurrentPage(page);
+            localStorage.setItem(PAGE_STORAGE_KEY, page);
         }
-        
-        setCurrentPage(page);
-        localStorage.setItem(PAGE_STORAGE_KEY, page);
     };
 
     const handleProfileUpdate = (updatedUser: Partial<User>) => {
