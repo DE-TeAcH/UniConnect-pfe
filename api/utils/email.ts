@@ -75,6 +75,7 @@ export async function sendCreatorEventEmail(bccEmails: string[], creatorName: st
 
     await transporter.sendMail({
         from: `"UniConnect" <${emailFrom}>`,
+        to: emailFrom,
         bcc: bccEmails,
         subject,
         html,
@@ -92,11 +93,11 @@ export async function sendApplicationConfirmationEmail(to: string, eventTitle: s
         </div>
         <div style="padding: 24px;">
             <p>Congratulations! You have successfully applied to the following event:</p>
-            <h2 style="color: #047857; margin: 16px 0;">\${eventTitle}</h2>
+            <h2 style="color: #047857; margin: 16px 0;">${eventTitle}</h2>
             <div style="background: #f3f4f6; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
-                <p style="margin: 0 0 8px;"><strong>Date:</strong> \${new Date(startDate).toLocaleDateString()}</p>
-                <p style="margin: 0 0 8px;"><strong>Time:</strong> \${time}</p>
-                <p style="margin: 0;"><strong>Location:</strong> \${location}</p>
+                <p style="margin: 0 0 8px;"><strong>Date:</strong> ${new Date(startDate).toLocaleDateString()}</p>
+                <p style="margin: 0 0 8px;"><strong>Time:</strong> ${time}</p>
+                <p style="margin: 0;"><strong>Location:</strong> ${location}</p>
             </div>
             <p>We are excited to see you there! Be sure to mark your calendar.</p>
         </div>

@@ -51,14 +51,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             if (users.length > 0 && events.length > 0) {
                 const user = users[0];
                 const eventInfo = events[0];
-                if (user.receive_notifications) {
-                    sendApplicationConfirmationEmail(
+                if (user.receive_notifications !== false && user.receive_notifications !== 0) {
+                    await sendApplicationConfirmationEmail(
                         user.email,
                         eventInfo.title,
                         eventInfo.start_date,
                         eventInfo.location,
                         eventInfo.start_time
-                    ).catch(e => console.error('Failed to send application confirmation email:', e));
+                    );
                 }
             }
         } catch (e) {

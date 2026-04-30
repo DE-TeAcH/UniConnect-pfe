@@ -150,7 +150,7 @@ export function Sidebar({ currentPage, userRole, onNavigate, onClose, onLogout, 
 
       <div className="p-4 border-t border-border">
         <div className="text-xs text-muted-foreground text-center">
-          UniConnect v2.0
+          UniConnect v2.4
         </div>
       </div>
     </div>

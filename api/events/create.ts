@@ -120,9 +120,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Fetch followers to send notifications
         try {
             const [followers]: any = await conn.execute(
-                `SELECT u.email FROM follows f 
+                `SELECT u.email FROM follow_creators f 
                  JOIN users u ON f.follower_id = u.id 
-                 WHERE f.creator_id = ? AND u.receive_notifications = TRUE`,
+                 WHERE f.creator_id = ? AND COALESCE(u.receive_notifications, 1) = 1 AND u.email IS NOT NULL`,
                 [creator_id]
             );
             
@@ -136,8 +136,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     if (creatorRes.length > 0) creatorNameForEmail = creatorRes[0].name;
                 } catch (_) {}
 
-                // Non-blocking email sending
-                sendCreatorEventEmail(bccEmails, creatorNameForEmail, title, start_date).catch(e => console.error('Failed to send follower emails:', e));
+                await sendCreatorEventEmail(bccEmails, creatorNameForEmail, title, start_date);
             }
         } catch (e) {
             console.error('Followers notification error:', e);
