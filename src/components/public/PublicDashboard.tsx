@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
+import { PasswordInput } from '../ui/password-input';
 import { ScrollArea } from '../ui/scroll-area';
 import { Separator } from '../ui/separator';
 import { useState, useEffect } from 'react';
@@ -23,6 +24,9 @@ export function PublicDashboard() {
     const [creatorUsername, setCreatorUsername] = useState('');
     const [creatorPassword, setCreatorPassword] = useState('');
     const [creatorConfirmPassword, setCreatorConfirmPassword] = useState('');
+    const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+    const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
+    const [isTPasswordVisible, setIsTPasswordVisible] = useState(false);
 
     const isPasswordMatch = creatorPassword === creatorConfirmPassword;
     const showPasswordError = creatorConfirmPassword.length > 0 && !isPasswordMatch;
@@ -326,6 +330,14 @@ export function PublicDashboard() {
                             return;
                         }
 
+                        if (user?.role !== 'teacher') {
+                            const isPasswordValid = creatorPassword.length >= 8 && /[A-Z]/.test(creatorPassword) && /[a-z]/.test(creatorPassword) && /\d/.test(creatorPassword) && /[^A-Za-z0-9]/.test(creatorPassword);
+                            if (!isPasswordValid) {
+                                toast.error('Password does not meet the requirements!');
+                                return;
+                            }
+                        }
+
                         setIsSubmitting(true);
                         try {
                             const guestEmail = (document.getElementById('contact-email') as HTMLInputElement)?.value;
@@ -394,17 +406,27 @@ export function PublicDashboard() {
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="password">Password</Label>
-                                        <Input id="password" type="password" placeholder="Create a password" value={creatorPassword} onChange={(e) => setCreatorPassword(e.target.value)} required />
+                                        <PasswordInput
+                                            id="password"
+                                            placeholder="Create a password"
+                                            value={creatorPassword}
+                                            onChange={(e) => setCreatorPassword(e.target.value)}
+                                            visible={isPasswordVisible}
+                                            onVisibleChange={setIsPasswordVisible}
+                                            showValidation
+                                            required
+                                        />
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="confirm-password">Confirm Password</Label>
-                                        <Input
+                                        <PasswordInput
                                             id="confirm-password"
-                                            type="password"
                                             placeholder="Confirm password"
                                             value={creatorConfirmPassword}
                                             onChange={(e) => setCreatorConfirmPassword(e.target.value)}
                                             className={showPasswordError ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                                            visible={isConfirmPasswordVisible}
+                                            onVisibleChange={setIsConfirmPasswordVisible}
                                             required
                                         />
                                         {showPasswordError && (
@@ -416,7 +438,15 @@ export function PublicDashboard() {
                                 <>
                                     <div className="space-y-2">
                                         <Label htmlFor="t-password">Confirm your Password</Label>
-                                        <Input id="t-password" type="password" placeholder="Enter your password to confirm" value={creatorPassword} onChange={(e) => setCreatorPassword(e.target.value)} required />
+                                        <PasswordInput
+                                            id="t-password"
+                                            placeholder="Enter your password to confirm"
+                                            value={creatorPassword}
+                                            onChange={(e) => setCreatorPassword(e.target.value)}
+                                            visible={isTPasswordVisible}
+                                            onVisibleChange={setIsTPasswordVisible}
+                                            required
+                                        />
                                     </div>
                                 </>
                             )}

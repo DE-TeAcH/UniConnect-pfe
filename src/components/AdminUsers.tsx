@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { PasswordInput } from './ui/password-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import {
@@ -116,6 +117,7 @@ export function AdminUsers() {
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isEditPasswordVisible, setIsEditPasswordVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -344,6 +346,11 @@ export function AdminUsers() {
 
       // Only include password if it's been changed
       if (editUser.password && editUser.password.trim() !== '') {
+        const isPasswordValid = editUser.password.length >= 8 && /[A-Z]/.test(editUser.password) && /[a-z]/.test(editUser.password) && /\d/.test(editUser.password) && /[^A-Za-z0-9]/.test(editUser.password);
+        if (!isPasswordValid) {
+            toast.error('Password does not meet the requirements!');
+            return;
+        }
         updateData.password = editUser.password;
       }
 
@@ -385,6 +392,11 @@ export function AdminUsers() {
     }
 
     if (newUser.name && newUser.username && newUser.password && newUser.email && newUser.team) {
+      const isPasswordValid = newUser.password.length >= 8 && /[A-Z]/.test(newUser.password) && /[a-z]/.test(newUser.password) && /\d/.test(newUser.password) && /[^A-Za-z0-9]/.test(newUser.password);
+      if (!isPasswordValid) {
+        toast.error('Password does not meet the requirements!');
+        return;
+      }
       try {
         const selectedTeam = teamsList.find(t => t.name === newUser.team);
         const response = await api.users.create({
@@ -708,13 +720,15 @@ export function AdminUsers() {
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-password" className="text-right">New Password</Label>
-              <Input
+              <PasswordInput
                 id="edit-password"
-                type="password"
                 value={editUser.password}
-                onChange={(e) => setEditUser(prev => ({ ...prev, password: e.target.value }))}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditUser(prev => ({ ...prev, password: e.target.value }))}
                 className="col-span-3"
                 placeholder="Leave blank to keep current"
+                visible={isEditPasswordVisible}
+                onVisibleChange={setIsEditPasswordVisible}
+                showValidation
               />
             </div>
 

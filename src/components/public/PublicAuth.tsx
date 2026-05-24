@@ -132,6 +132,12 @@ export function PublicAuth() {
         }
 
         setIsLoading(true);
+        const isPasswordValid = newPassword.length >= 8 && /[A-Z]/.test(newPassword) && /[a-z]/.test(newPassword) && /\d/.test(newPassword) && /[^A-Za-z0-9]/.test(newPassword);
+        if (!isPasswordValid) {
+            setIsLoading(false);
+            toast.error('Password does not meet the requirements');
+            return;
+        }
         try {
             const res = await api.auth.resetPassword(forgotPasswordEmail, newPassword);
             if (res.success) {
@@ -234,6 +240,12 @@ export function PublicAuth() {
             }
 
             setIsLoading(true);
+            const isPasswordValid = registerPassword.length >= 8 && /[A-Z]/.test(registerPassword) && /[a-z]/.test(registerPassword) && /\d/.test(registerPassword) && /[^A-Za-z0-9]/.test(registerPassword);
+            if (!isPasswordValid) {
+                setIsLoading(false);
+                toast.error('Password does not meet the requirements');
+                return;
+            }
             try {
                 const res = await api.auth.sendPin(registerEmail, 'register');
                 if (res.success) {
@@ -440,6 +452,7 @@ export function PublicAuth() {
                                                     onChange={(e) => setNewPassword(e.target.value)}
                                                     visible={isResetPasswordVisible}
                                                     onVisibleChange={setIsResetPasswordVisible}
+                                                    showValidation
                                                     required
                                                 />
                                             </div>
@@ -630,6 +643,7 @@ export function PublicAuth() {
                                                     onChange={(e) => setRegisterPassword(e.target.value)}
                                                     visible={isRegisterPasswordVisible}
                                                     onVisibleChange={setIsRegisterPasswordVisible}
+                                                    showValidation
                                                     required
                                                 />
                                             </div>

@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { PasswordInput } from './ui/password-input';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
@@ -166,6 +167,7 @@ export function AdminCreators() {
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
   const [expandedRequestId, setExpandedRequestId] = useState<number | null>(null);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   const handlePromoteUser = async (req: any, existingUser: any) => {
     setIsLoading(true);
@@ -395,6 +397,12 @@ export function AdminCreators() {
   const handleAddTeam = async () => {
     if (!newTeam.name || !newTeam.leader || !newTeam.email || !newTeam.username || !newTeam.password) {
       toast.error('Please fill the required fields.');
+      return;
+    }
+
+    const isPasswordValid = newTeam.password.length >= 8 && /[A-Z]/.test(newTeam.password) && /[a-z]/.test(newTeam.password) && /\d/.test(newTeam.password) && /[^A-Za-z0-9]/.test(newTeam.password);
+    if (!isPasswordValid) {
+      toast.error('Password does not meet the requirements!');
       return;
     }
 
@@ -714,13 +722,15 @@ export function AdminCreators() {
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="password" className="text-right">Password</Label>
-                  <Input
+                  <PasswordInput
                     id="password"
-                    type="password"
                     value={newTeam.password}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTeam(prev => ({ ...prev, password: e.target.value }))}
                     className="col-span-3"
                     placeholder="Login password"
+                    visible={isPasswordVisible}
+                    onVisibleChange={setIsPasswordVisible}
+                    showValidation
                   />
                 </div>
 

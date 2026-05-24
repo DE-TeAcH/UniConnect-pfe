@@ -141,8 +141,9 @@ export function PublicSettings() {
             toast.error('New passwords do not match!');
             return;
         }
-        if (passwordData.newPassword.length < 6) {
-            toast.error('Password must be at least 6 characters long!');
+        const isPasswordValid = passwordData.newPassword.length >= 8 && /[A-Z]/.test(passwordData.newPassword) && /[a-z]/.test(passwordData.newPassword) && /\d/.test(passwordData.newPassword) && /[^A-Za-z0-9]/.test(passwordData.newPassword);
+        if (!isPasswordValid) {
+            toast.error('Password does not meet the requirements!');
             return;
         }
 
@@ -307,6 +308,7 @@ export function PublicSettings() {
                                     onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
                                     visible={isNewPasswordVisible}
                                     onVisibleChange={setIsNewPasswordVisible}
+                                    showValidation
                                     placeholder="Enter new password"
                                 />
                             </div>
