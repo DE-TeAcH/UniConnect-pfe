@@ -340,8 +340,8 @@ export function PublicDashboard() {
 
                         setIsSubmitting(true);
                         try {
-                            const guestEmail = (document.getElementById('contact-email') as HTMLInputElement)?.value;
-                            const isUnivEmail = guestEmail?.toLowerCase().includes('univ') || guestEmail?.toLowerCase().includes('edu') || user?.email?.toLowerCase().includes('univ') || user?.email?.toLowerCase().includes('edu');
+                             const guestEmail = (document.getElementById('contact-email') as HTMLInputElement)?.value;
+                             const isUnivEmail = guestEmail ? /@(univ-|etu\.univ-)[^.]+\.dz$/i.test(guestEmail) : false;
 
                             const formData = user?.role === 'teacher' ? {
                                 role: 'teacher',

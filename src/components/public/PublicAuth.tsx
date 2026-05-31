@@ -41,7 +41,7 @@ export function PublicAuth() {
     const usernameTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Check if the email is a student email (contains 'etu.' after @)
-    const isStudentEmail = registerEmail.includes('@etu.');
+    const isStudentEmail = registerEmail.toLowerCase().includes('@etu.');
 
     // Forgot Password State
     const [isForgotPassword, setIsForgotPassword] = useState(false);
@@ -53,8 +53,8 @@ export function PublicAuth() {
     const [confirmNewPassword, setConfirmNewPassword] = useState('');
     const [isResetPasswordVisible, setIsResetPasswordVisible] = useState(false);
 
-    const isRegisterEmailValid = registerEmail === '' || registerEmail.endsWith('@univ-mosta.dz') || registerEmail.endsWith('@etu.univ-mosta.dz');
-    const isForgotEmailValid = forgotPasswordEmail === '' || forgotPasswordEmail.endsWith('@univ-mosta.dz') || forgotPasswordEmail.endsWith('@etu.univ-mosta.dz');
+    const isRegisterEmailValid = registerEmail === '' || /@(univ-|etu\.univ-)[^.]+\.dz$/.test(registerEmail);
+    const isForgotEmailValid = forgotPasswordEmail === '' || /@(univ-|etu\.univ-)[^.]+\.dz$/.test(forgotPasswordEmail);
 
     // Debounced username uniqueness check
     useEffect(() => {
@@ -223,9 +223,9 @@ export function PublicAuth() {
                 }
             }
 
-            const isValidDomain = registerEmail.endsWith('@univ-mosta.dz') || registerEmail.endsWith('@etu.univ-mosta.dz') || registerEmail.endsWith('@gmail.com');
+            const isValidDomain = /@(univ-|etu\.univ-)[^.]+\.dz$/.test(registerEmail);
             if (!isValidDomain) {
-                toast.error('Please use a valid university email (@univ-mosta.dz or @etu.univ-mosta.dz)');
+                toast.error('Please use a valid university email (@univ-xxxxx.dz or @etu.univ-xxxx.dz)');
                 return;
             }
 
@@ -552,9 +552,9 @@ export function PublicAuth() {
                                                     className={!isRegisterEmailValid ? "border-red-500 text-red-500 focus-visible:ring-red-500" : ""}
                                                     required
                                                 />
-                                                <p className={`text-[10px] ml-1 ${!isRegisterEmailValid ? "text-red-500 font-medium" : "text-muted-foreground"}`}>
-                                                    Must end in @univ-mosta.dz or @etu.univ-mosta.dz
-                                                </p>
+                                                 <p className={`text-[10px] ml-1 ${!isRegisterEmailValid ? "text-red-500 font-medium" : "text-muted-foreground"}`}>
+                                                     Must be a valid university email (e.g., @univ-xxxxx.dz or @etu.univ-xxxx.dz)
+                                                 </p>
                                             </div>
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-2">
