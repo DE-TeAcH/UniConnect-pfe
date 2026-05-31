@@ -16,7 +16,7 @@ export function AdminRequests() {
     try {
       const response = await api.events.get();
       if (response.success && Array.isArray(response.data)) {
-        // Filter for pending events (room requests)
+        // pending events = venue booking requests
         const pending = response.data.filter((e: any) => e.status === 'pending');
         setRequests(pending);
       }

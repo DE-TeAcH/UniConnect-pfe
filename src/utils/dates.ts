@@ -1,8 +1,4 @@
-/**
- * MySQL's mysql2 driver returns DATE columns as ISO strings like '2026-03-10T00:00:00.000Z'.
- * This utility extracts just the 'YYYY-MM-DD' portion so we can safely combine with time
- * or use for display without extra time cruft.
- */
+// mysql2 returns DATE as ISO strings; these utilities extract YYYY-MM-DD
 
 /** Extract 'YYYY-MM-DD' from any date-ish string */
 export function toDateOnly(d: string | null | undefined): string {

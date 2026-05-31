@@ -141,7 +141,6 @@ export function MemberSettings({ currentUser, onLogout, onProfileUpdate }: Membe
     };
 
     const handleDeleteAccount = async () => {
-        // Validation for team leader delegation
         if (currentUser.role === 'team-leader') {
             if (hasSuccessor && (!successorFullName.trim() || !successorUsername.trim())) {
                 toast.error('Please provide both the full name and username of the successor.');

@@ -6,6 +6,7 @@ interface ApiResponse<T = any> {
   data?: T;
 }
 
+// generic fetch wrapper, always returns ApiResponse
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
   try {
     const res = await fetch(`${BASE_URL}${endpoint}`, {
@@ -83,6 +84,7 @@ export const api = {
       request('/teams/create', { method: 'POST', body: JSON.stringify(data) }),
     update: (data: any) =>
       request('/teams/update', { method: 'POST', body: JSON.stringify(data) }),
+    // accepts single id or array of ids
     delete: (ids: string | string[]) => {
       const body = Array.isArray(ids) ? { ids } : { id: ids };
       return request('/teams/delete', { method: 'POST', body: JSON.stringify(body) });

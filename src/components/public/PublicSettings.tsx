@@ -15,7 +15,6 @@ import { api } from '../../services/api';
 export function PublicSettings() {
     const { user, requireLogin, login, logout } = usePublicStore();
 
-    // User must be logged in to view 
     if (!user) {
         return (
             <div className="text-center py-20 space-y-4">
@@ -46,8 +45,7 @@ export function PublicSettings() {
 
     const [notifications, setNotifications] = useState(user.receive_notifications !== false && user.receive_notifications !== 0);
 
-    // Sync state with backend on mount
-    React.useEffect(() => {
+React.useEffect(() => {
         const fetchUserData = async () => {
             try {
                 const res = await api.users.get({ id: String(user.id) });
@@ -124,7 +122,6 @@ export function PublicSettings() {
             });
 
             if (res.success) {
-                // Update local storage/store if possible
                 login({ ...user, name: profileData.name, username: profileData.username });
                 setIsSuccessDialogOpen(true);
                 setTimeout(() => setIsSuccessDialogOpen(false), 2000);
@@ -141,6 +138,7 @@ export function PublicSettings() {
             toast.error('New passwords do not match!');
             return;
         }
+        // password: 8+ chars, uppercase, lowercase, digit, special
         const isPasswordValid = passwordData.newPassword.length >= 8 && /[A-Z]/.test(passwordData.newPassword) && /[a-z]/.test(passwordData.newPassword) && /\d/.test(passwordData.newPassword) && /[^A-Za-z0-9]/.test(passwordData.newPassword);
         if (!isPasswordValid) {
             toast.error('Password does not meet the requirements!');

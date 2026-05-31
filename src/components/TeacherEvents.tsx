@@ -119,7 +119,7 @@ export function TeacherEvents({ currentUser }: TeacherEventsProps) {
             toast.error('End time cannot be before start time.');
             return;
         }
-        if (!form.proofOfAccess && !editingId) { // Only require proof on creation, or if it's being updated
+        if (!form.proofOfAccess && !editingId) { // require proof PDF on creation only
             toast.error('Proof document (PDF) is required.');
             return;
         }

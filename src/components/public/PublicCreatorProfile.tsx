@@ -24,12 +24,10 @@ export function PublicCreatorProfile() {
         const fetchData = async () => {
             if (!currentEntityId) { setLoading(false); return; }
             try {
-                // Fetch creator user
                 const usRes = await api.users.get({ id: String(currentEntityId) });
                 if (usRes.success && Array.isArray(usRes.data) && usRes.data.length > 0) {
                     setCreator(usRes.data[0]);
                 }
-                // Fetch events by this creator
                 const evRes = await api.events.get({ creator_id: String(currentEntityId) });
                 if (evRes.success && Array.isArray(evRes.data)) {
                     setCreatorEvents(evRes.data);
@@ -58,7 +56,7 @@ export function PublicCreatorProfile() {
     const displayName = creator.full_name || creator.username || 'Unknown';
     const creatorRole = creator.role === 'team_leader' ? 'team-leader' : creator.role;
 
-    // Sort creator events by newest first, then put most attended first
+    // newest first, most attended pinned at top
     let sortedDisplayEvents = [...creatorEvents].sort((a, b) => {
         const aDate = a.start_date && a.start_date.length > 10 ? a.start_date.substring(0, 10) : a.start_date;
         const bDate = b.start_date && b.start_date.length > 10 ? b.start_date.substring(0, 10) : b.start_date;
@@ -143,12 +141,14 @@ export function PublicCreatorProfile() {
         return new Date(dateOnly + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     };
 
+    // check if event end date+time is still in the future
     const isEventActive = (event: any) => {
         const ed = event.end_date && event.end_date.length > 10 ? event.end_date.substring(0, 10) : event.end_date;
         const eventEndDateTime = new Date(`${ed}T${event.end_time || '23:59:59'}`);
         return eventEndDateTime >= new Date();
     };
 
+    // classify as upcoming/active/completed based on dates vs now
     const getEventStatus = (event: any) => {
         const now = new Date();
         const sd = event.start_date && event.start_date.length > 10 ? event.start_date.substring(0, 10) : event.start_date;
@@ -203,9 +203,8 @@ export function PublicCreatorProfile() {
                 <ArrowLeft className="mr-2 h-4 w-4" /> Back to Creators
             </Button>
 
-            {/* Top section: Main Profile (3/4) and Overview Stats (1/4) side-by-side on large screens */}
+            {/* Profile Header */}
             <div className="flex flex-col lg:flex-row gap-8">
-                {/* Profile Header (3/4 on lg, full on md) */}
                 <div className="bg-card border rounded-3xl overflow-hidden shadow-sm relative lg:w-3/4 flex-shrink-0">
                     <div className={`h-32 md:h-40 bg-gradient-to-r ${getRoleGradient(creatorRole)}`} />
                     <div className="px-8 pb-8 flex flex-col md:flex-row gap-6 relative z-10">
@@ -254,7 +253,7 @@ export function PublicCreatorProfile() {
                     </div>
                 </div>
 
-                {/* Stats Sidebar (1/4 on lg, full on md) */}
+                {/* Stats */}
                 <div className="lg:w-1/4">
                     <Card className="h-full">
                         <CardHeader>
@@ -303,7 +302,7 @@ export function PublicCreatorProfile() {
                     {sortedDisplayEvents.length > 0 ? sortedDisplayEvents.map((event, idx) => {
                         const isSaved = savedEventIds.includes(event.id);
                         const active = isEventActive(event);
-                        const isMostAttended = idx === 0 && sortedDisplayEvents.length > 1; // Assuming it was unshifted to idx 0
+                        const isMostAttended = idx === 0 && sortedDisplayEvents.length > 1;
 
                         return (
                             <Card key={event.id} className={`border shadow-sm flex flex-col h-full hover:shadow-md transition-all group relative ${isMostAttended ? 'ring-2 ring-primary border-transparent' : 'hover:border-primary/30'}`}>
@@ -374,7 +373,7 @@ export function PublicCreatorProfile() {
                 </div>
             </div>
 
-            {/* Event Detail Modal (Reusing from PublicEvents) */}
+            {/* Event Detail Modal */}
             <Dialog open={selectedEvent !== null} onOpenChange={(open) => !open && setSelectedEvent(null)}>
                 <DialogContent className="sm:max-w-[620px] max-h-[85vh]">
                     {selectedEvent && (

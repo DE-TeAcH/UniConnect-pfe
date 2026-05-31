@@ -30,9 +30,7 @@ interface User {
     departmentName?: string;
     departmentId?: number;
     avatar?: string;
-    // Teacher-specific
     faculty?: string;
-    // Company-specific
     companyName?: string;
     loginTimestamp?: number;
 }
@@ -58,7 +56,6 @@ export default function ManagementPortal() {
                 if (!userData.teamId && userData.team_id) userData.teamId = userData.team_id;
                 if (!userData.departmentId && userData.department_id) userData.departmentId = userData.department_id;
 
-                // Session timeout check
                 const loginTimestamp = userData.loginTimestamp;
                 if (loginTimestamp) {
                     const SESSION_TIMEOUT = 30 * 60 * 1000;
@@ -82,7 +79,6 @@ export default function ManagementPortal() {
         }
     }, []);
 
-    // Periodic session timeout check
     useEffect(() => {
         const SESSION_TIMEOUT = 30 * 60 * 1000;
         const checkSession = () => {
@@ -122,7 +118,6 @@ export default function ManagementPortal() {
         }
     };
 
-    // Initial history setup
     useEffect(() => {
         window.history.replaceState({ page: currentPage }, '', window.location.href);
         // eslint-disable-next-line react-hooks/exhaustive-deps

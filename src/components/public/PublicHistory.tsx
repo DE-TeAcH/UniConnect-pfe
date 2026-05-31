@@ -35,8 +35,6 @@ export function PublicHistory() {
         fetchEvents();
     }, []);
 
-    // If not logged in, shouldn't really reach here because of router/nav logic,
-    // but just in case, show a fallback message.
     if (!user) {
         return (
             <div className="text-center py-20">
@@ -46,14 +44,14 @@ export function PublicHistory() {
         );
     }
 
-    // MySQL returns dates as ISO strings like '2026-03-10T00:00:00.000Z'
-    // We need to extract just 'YYYY-MM-DD' before combining with time
+    // extract YYYY-MM-DD from ISO timestamp
     const toDateOnly = (d: string) => {
         if (!d) return '';
         if (d.length === 10) return d;
         return d.substring(0, 10);
     };
 
+    // classify as upcoming/active/completed based on dates vs now
     const getEventStatus = (event: any) => {
         const now = new Date();
         const sd = toDateOnly(event.start_date);
@@ -118,6 +116,7 @@ export function PublicHistory() {
         return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     };
 
+    // check if event end date+time is still in the future
     const isEventActive = (event: any) => {
         const ed = toDateOnly(event.end_date);
         const eventEndDateTime = new Date(`${ed}T${event.end_time || '23:59:59'}`);
@@ -157,7 +156,6 @@ export function PublicHistory() {
                 if (paymentType === 'Paid' && !e.is_paid) return false;
             }
 
-            // Event status filter
             if (eventStatus !== 'All') {
                 const status = getEventStatus(e);
                 if (eventStatus === 'Completed' && status !== 'completed') return false;
@@ -167,7 +165,7 @@ export function PublicHistory() {
 
             return true;
         }).sort((a, b) => {
-            // When a specific status is selected, use status-specific sorting
+            // sort by status-specific criteria when a status is selected
             if (eventStatus === 'Completed') {
                 return new Date(toDateOnly(b.end_date)).getTime() - new Date(toDateOnly(a.end_date)).getTime();
             }

@@ -15,15 +15,12 @@ import DarkLogo from '../../assets/UniConnect_Dark.png';
 export function PublicAuth() {
     const { login, continueAsGuest } = usePublicStore();
 
-    // Loading state
     const [isLoading, setIsLoading] = useState(false);
 
-    // Login State
     const [loginEmail, setLoginEmail] = useState('');
     const [loginPassword, setLoginPassword] = useState('');
     const [isLoginPasswordVisible, setIsLoginPasswordVisible] = useState(false);
 
-    // Register State
     const [registerName, setRegisterName] = useState('');
     const [registerEmail, setRegisterEmail] = useState('');
     const [registerFaculty, setRegisterFaculty] = useState('');
@@ -36,14 +33,12 @@ export function PublicAuth() {
     const [pinSent, setPinSent] = useState(false);
     const [verificationPin, setVerificationPin] = useState('');
 
-    // Username check state
     const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
     const usernameTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // Check if the email is a student email (contains 'etu.' after @)
+    // student emails contain '@etu.'
     const isStudentEmail = registerEmail.toLowerCase().includes('@etu.');
 
-    // Forgot Password State
     const [isForgotPassword, setIsForgotPassword] = useState(false);
     const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
     const [forgotPinSent, setForgotPinSent] = useState(false);
@@ -53,6 +48,7 @@ export function PublicAuth() {
     const [confirmNewPassword, setConfirmNewPassword] = useState('');
     const [isResetPasswordVisible, setIsResetPasswordVisible] = useState(false);
 
+    // uni email: @univ-xxxxx.dz or @etu.univ-xxxx.dz
     const isRegisterEmailValid = registerEmail === '' || /@(univ-|etu\.univ-)[^.]+\.dz$/.test(registerEmail);
     const isForgotEmailValid = forgotPasswordEmail === '' || /@(univ-|etu\.univ-)[^.]+\.dz$/.test(forgotPasswordEmail);
 
@@ -132,6 +128,7 @@ export function PublicAuth() {
         }
 
         setIsLoading(true);
+        // password: 8+ chars, uppercase, lowercase, digit, special
         const isPasswordValid = newPassword.length >= 8 && /[A-Z]/.test(newPassword) && /[a-z]/.test(newPassword) && /\d/.test(newPassword) && /[^A-Za-z0-9]/.test(newPassword);
         if (!isPasswordValid) {
             setIsLoading(false);
@@ -240,6 +237,7 @@ export function PublicAuth() {
             }
 
             setIsLoading(true);
+            // password: 8+ chars, uppercase, lowercase, digit, special
             const isPasswordValid = registerPassword.length >= 8 && /[A-Z]/.test(registerPassword) && /[a-z]/.test(registerPassword) && /\d/.test(registerPassword) && /[^A-Za-z0-9]/.test(registerPassword);
             if (!isPasswordValid) {
                 setIsLoading(false);
@@ -267,7 +265,6 @@ export function PublicAuth() {
             return;
         }
 
-        // Verify PIN first
         setIsLoading(true);
         try {
             const pinRes = await api.auth.verifyPin(registerEmail, verificationPin, 'register');
@@ -282,7 +279,6 @@ export function PublicAuth() {
             return;
         }
 
-        // Register via API
         try {
             const registerData: any = {
                 name: registerName,

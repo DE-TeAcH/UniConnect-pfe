@@ -325,7 +325,7 @@ export function AdminEvents() {
                       </Select>
                     </div>
                   </div>
-                  {/* Proof document (PDF) — read-only for admin */}
+                  {/* Proof document (PDF) */}
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label className="text-right text-sm">Proof (PDF)</Label>
                     <div className="col-span-3 flex items-center gap-2">

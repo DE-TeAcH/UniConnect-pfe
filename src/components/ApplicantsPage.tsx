@@ -39,16 +39,13 @@ export function ApplicantsPage({ role, currentUser }: ApplicantsPageProps) {
     const [search, setSearch] = useState('');
     const [isExportingMap, setIsExportingMap] = useState<Record<string, boolean>>({});
 
-    // Filters
     const [statusFilter, setStatusFilter] = useState<'all' | 'upcoming' | 'completed'>('all');
     const [categoryFilter, setCategoryFilter] = useState<string>('all');
     const [creatorFilter, setCreatorFilter] = useState<string>('all');
     const [typeFilter, setTypeFilter] = useState<string>('all');
 
-    // Event list sorting
     const [eventSortValue, setEventSortValue] = useState<string>('date-desc');
 
-    // Applicant detail sorting
     const [appSortField, setAppSortField] = useState<ApplicantSortField>('date');
     const [appSortDir, setAppSortDir] = useState<SortDir>('desc');
 
@@ -90,7 +87,6 @@ export function ApplicantsPage({ role, currentUser }: ApplicantsPageProps) {
     const totalFree = allEvents.filter(e => !e.is_paid).length;
 
 
-    // Toggle applicant sort
     const toggleAppSort = (field: string) => {
         const f = field as ApplicantSortField;
         if (appSortField === f) setAppSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -150,27 +146,20 @@ export function ApplicantsPage({ role, currentUser }: ApplicantsPageProps) {
 
     const handleExportPDF = async (event: any) => {
         setIsExportingMap(p => ({...p, [event.id]: true}));
-        console.log('[PDF Debug] event:', event.id, 'is_paid:', event.is_paid, 'price_type:', event.price_type);
         try {
             const toastId = toast.loading('Fetching applicants...');
             let applicants: any[] = [];
             if (event.is_paid) {
-                console.log('[PDF Debug] Fetching redirects for event_id:', event.id);
                 const res = await api.eventRedirects.get({ event_id: event.id });
-                console.log('[PDF Debug] Redirects response:', JSON.stringify(res));
                 if (res.success && Array.isArray(res.data)) applicants = res.data;
             } else {
-                console.log('[PDF Debug] Fetching registrations for event_id:', event.id);
                 const res = await api.eventRegistrations.get({ event_id: event.id });
-                console.log('[PDF Debug] Registrations response:', JSON.stringify(res));
                 if (res.success && Array.isArray(res.data)) applicants = res.data;
             }
             toast.dismiss(toastId);
-            console.log('[PDF Debug] Calling exportEventApplicantsPDF with', applicants.length, 'applicants');
             exportEventApplicantsPDF(event, applicants);
         } catch (e) {
             toast.error('Failed to fetch applicants for PDF');
-            console.error('[PDF Debug] Error:', e);
         } finally {
             setIsExportingMap(p => ({...p, [event.id]: false}));
         }

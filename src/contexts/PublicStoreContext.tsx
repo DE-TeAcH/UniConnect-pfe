@@ -49,7 +49,6 @@ export function PublicStoreProvider({ children }: { children: React.ReactNode })
 
     const [hasGuestAccess, setHasGuestAccess] = useState(false);
 
-    // Load from local storage on mount
     useEffect(() => {
         const saved = localStorage.getItem('public_store');
         if (saved) {
@@ -62,7 +61,6 @@ export function PublicStoreProvider({ children }: { children: React.ReactNode })
         }
     }, []);
 
-    // Fetch user associations from backend
     useEffect(() => {
         const fetchUserData = async () => {
             if (user && user.id) {
@@ -90,7 +88,6 @@ export function PublicStoreProvider({ children }: { children: React.ReactNode })
         fetchUserData();
     }, [user]);
 
-    // Session timeout check
     useEffect(() => {
         const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
         const checkSession = () => {
@@ -104,11 +101,10 @@ export function PublicStoreProvider({ children }: { children: React.ReactNode })
         };
 
         checkSession();
-        const interval = setInterval(checkSession, 60000); // Check every minute
+        const interval = setInterval(checkSession, 60000);
         return () => clearInterval(interval);
     }, [user, loginTimestamp]);
 
-    // Save to local storage on change
     useEffect(() => {
         localStorage.setItem('public_store', JSON.stringify({
             user, loginTimestamp, hasGuestAccess
@@ -197,7 +193,6 @@ export function PublicStoreProvider({ children }: { children: React.ReactNode })
     const [currentView, setCurrentView] = useState<PublicView>('dashboard');
     const [currentEntityId, setCurrentEntityId] = useState<string | number | null>(null);
 
-    // Initial history setup
     useEffect(() => {
         window.history.replaceState({ view: currentView, entityId: currentEntityId }, '', window.location.href);
     }, []);

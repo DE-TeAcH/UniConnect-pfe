@@ -42,15 +42,13 @@ export function PublicDashboard() {
                 const evRes = await api.events.get();
                 if (evRes.success && Array.isArray(evRes.data)) {
                     const events = evRes.data;
-                    // Trending: sort by registration count, take top 3
+                    // trending: top 3 by registrations
                     const sorted = [...events].sort((a: any, b: any) => (b.registration_count || 0) - (a.registration_count || 0));
                     setTrendingEvents(sorted.slice(0, 3));
-                    // My applied events
                     setMyEvents(events.filter((e: any) => appliedEventIds.includes(e.id)));
-                    // From followed creators
                     setFollowedEvents(events.filter((e: any) => e.creator_id && followedCreatorIds.includes(e.creator_id)));
                 }
-                // Top creators: fetch users who are creators
+                // fetch creators (teachers, companies, team leaders)
                 const usRes = await api.users.get();
                 if (usRes.success && Array.isArray(usRes.data)) {
                     const creators = usRes.data.filter((u: any) =>
@@ -59,7 +57,6 @@ export function PublicDashboard() {
                     );
                     setTopCreators(creators.slice(0, 3));
                 }
-                // Check for pending creator requests if logged in
                 if (user) {
                     const reqRes = await api.creatorRequests.get();
                     if (reqRes.success && Array.isArray(reqRes.data)) {
@@ -110,12 +107,14 @@ export function PublicDashboard() {
         return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     };
 
+    // extract YYYY-MM-DD from ISO timestamp
     const toDateOnly = (d: string) => {
         if (!d) return '';
         if (d.length === 10) return d;
         return d.substring(0, 10);
     };
 
+    // check if event end date+time is still in the future
     const isEventActive = (event: any) => {
         const ed = toDateOnly(event.end_date);
         const eventEndDateTime = new Date(`${ed}T${event.end_time || '23:59:59'}`);
@@ -331,6 +330,7 @@ export function PublicDashboard() {
                         }
 
                         if (user?.role !== 'teacher') {
+                            // password: 8+ chars, uppercase, lowercase, digit, special
                             const isPasswordValid = creatorPassword.length >= 8 && /[A-Z]/.test(creatorPassword) && /[a-z]/.test(creatorPassword) && /\d/.test(creatorPassword) && /[^A-Za-z0-9]/.test(creatorPassword);
                             if (!isPasswordValid) {
                                 toast.error('Password does not meet the requirements!');
@@ -341,6 +341,7 @@ export function PublicDashboard() {
                         setIsSubmitting(true);
                         try {
                              const guestEmail = (document.getElementById('contact-email') as HTMLInputElement)?.value;
+                             // uni email: @univ-xxxxx.dz or @etu.univ-xxxx.dz
                              const isUnivEmail = guestEmail ? /@(univ-|etu\.univ-)[^.]+\.dz$/i.test(guestEmail) : false;
 
                             const formData = user?.role === 'teacher' ? {

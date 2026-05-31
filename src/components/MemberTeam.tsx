@@ -82,7 +82,6 @@ export function MemberTeam({ currentUser }: MemberTeamProps) {
                 sortField === 'joinDate' ? (b.join_date || b.created_at || '') :
                     b[sortField];
 
-            // Use custom role ordering when sorting by role
             if (sortField === 'role') {
                 const aOrder = getRoleOrder(a.role);
                 const bOrder = getRoleOrder(b.role);

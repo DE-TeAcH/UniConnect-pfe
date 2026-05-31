@@ -78,7 +78,7 @@ const roleDisplayConfig: Record<string, { label: string }> = {
 };
 
 export function Sidebar({ currentPage, userRole, onNavigate, onClose, onLogout, onLogin, className = '', isPublic }: SidebarProps) {
-  // If in public mode, teachers and team leaders should see the student sidebar
+  // public mode: teachers/team-leaders see student sidebar
   const effectiveRole = isPublic && (userRole === 'teacher' || userRole === 'team-leader') ? 'student' : userRole;
 
   const items = navigationItems[effectiveRole] || navigationItems.admin;

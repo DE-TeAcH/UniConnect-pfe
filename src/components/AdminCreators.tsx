@@ -1,4 +1,3 @@
-// AdminCreators.tsx
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -87,7 +86,7 @@ export function AdminCreators() {
 
         const uniqueCreatorsMap = new Map();
         creatorsData.forEach((u: any) => {
-          // If teacher, group by user ID. If company/team-leader, group by team_id
+          // group teachers by user, others by team
           const teamKey = u.role === 'teacher' ? `user-${u.id}` : (u.team_id || `user-${u.id}`);
           if (!uniqueCreatorsMap.has(teamKey)) {
             uniqueCreatorsMap.set(teamKey, u);
@@ -99,7 +98,7 @@ export function AdminCreators() {
           isTeacher: u.role === 'teacher',
           name: u.role === 'teacher' ? u.full_name : (u.team_name || u.full_name),
           leader: u.full_name || 'No Leader',
-          representativeId: u.id, // The user ID is the rep ID for clubs/companies
+          representativeId: u.id,
           email: u.email || 'N/A',
           totalMembers: 1,
           joinDate: formatDisplayDate(u.join_date || u.created_at),
@@ -135,7 +134,6 @@ export function AdminCreators() {
         }));
         setCreatorRequests(mappedRequests);
 
-        // Check existence for each request
         const existenceMap: Record<number, any> = {};
         for (const req of mappedRequests) {
           const userRes = await api.users.get({ email: req.email });
@@ -172,7 +170,6 @@ export function AdminCreators() {
   const handlePromoteUser = async (req: any, existingUser: any) => {
     setIsLoading(true);
     try {
-      // 1. Update user to be a creator
       const updateRes = await api.users.update(String(existingUser.id), {
         manage: true,
         role: req.role || 'teacher',
@@ -184,7 +181,6 @@ export function AdminCreators() {
         return;
       }
 
-      // 2. If company, create team profile
       if (req.role === 'company') {
         const teamPayload = {
           representative_id: existingUser.id,
@@ -199,7 +195,6 @@ export function AdminCreators() {
         }
       }
 
-      // 3. Cleanup request
       await api.creatorRequests.update({ id: String(req.id), action: 'approve' });
       setCreatorRequests(prev => prev.filter(r => r.id !== req.id));
 
@@ -234,7 +229,7 @@ export function AdminCreators() {
         leader: req.representative_name || req.leader || '',
         email: req.email,
         username: req.username || '',
-        password: req.requested_password || '', // Pre-fill password!
+        password: req.requested_password || '',
         description: req.description || '',
         bacMatricule: '',
         bacYear: '',
@@ -257,7 +252,6 @@ export function AdminCreators() {
     }
   };
 
-  // NEW: include bac fields for leader when creating a team
   const [newTeam, setNewTeam] = useState({
     name: '',
     role: 'team-leader',
@@ -278,7 +272,6 @@ export function AdminCreators() {
       let aValue: any = a[sortField];
       let bValue: any = b[sortField];
 
-      // Handle string comparisons
       if (typeof aValue === 'string' && typeof bValue === 'string') {
         aValue = aValue.toLowerCase();
         bValue = bValue.toLowerCase();
@@ -357,7 +350,6 @@ export function AdminCreators() {
 
     setIsLoading(true);
     try {
-      // 1. Fetch and cleanup events first
       const creatorId = team.representativeId || team.id;
       const evRes = await api.events.get({ creator_id: String(creatorId) });
       if (evRes.success && Array.isArray(evRes.data)) {
@@ -366,7 +358,6 @@ export function AdminCreators() {
         }
       }
 
-      // 2. Perform demotion or deletion
       let response;
       if (isTeacher) {
         response = await api.users.update(String(team.id), { manage: false });
@@ -393,27 +384,26 @@ export function AdminCreators() {
     }
   };
 
-  // UPDATED: handleAddTeam includes bac validation + fields
+  // create or promote creator: check existing -> create/update user -> create team -> cleanup request
   const handleAddTeam = async () => {
     if (!newTeam.name || !newTeam.leader || !newTeam.email || !newTeam.username || !newTeam.password) {
       toast.error('Please fill the required fields.');
       return;
     }
 
+    // password: 8+ chars, uppercase, lowercase, digit, special
     const isPasswordValid = newTeam.password.length >= 8 && /[A-Z]/.test(newTeam.password) && /[a-z]/.test(newTeam.password) && /\d/.test(newTeam.password) && /[^A-Za-z0-9]/.test(newTeam.password);
     if (!isPasswordValid) {
       toast.error('Password does not meet the requirements!');
       return;
     }
 
-    // validate matricule if provided
     const matricule = newTeam.bacMatricule?.trim();
     if (matricule && !/^\d{8}$/.test(matricule)) {
       toast.error('Bac matricule must be exactly 8 digits.');
       return;
     }
 
-    // validate year if provided (reasonable range)
     const yearStr = newTeam.bacYear?.trim();
     if (yearStr) {
       if (!/^\d{4}$/.test(yearStr)) {
@@ -430,7 +420,6 @@ export function AdminCreators() {
 
     setIsLoading(true);
     try {
-      // 1. Check if user already exists (by email or username)
       let existingUser = null;
       const emailCheck = await api.users.get({ email: newTeam.email });
       if (emailCheck.success && Array.isArray(emailCheck.data) && emailCheck.data.length > 0) {
@@ -446,7 +435,6 @@ export function AdminCreators() {
       let teamId = existingUser?.team_id || null;
 
       if (existingUser) {
-        // Update existing user to be a creator
         const updateRes = await api.users.update(String(userId), {
           manage: true,
           role: newTeam.role,
@@ -459,14 +447,12 @@ export function AdminCreators() {
         }
         toast.info(`Updated existing user account for ${newTeam.leader}`);
       } else {
-        // Create User First (New)
         if (!newTeam.password) {
           toast.error('Password is required for new creators.');
           setIsLoading(false);
           return;
         }
 
-        // Generate Team ID if needed
         if (newTeam.role !== 'teacher') {
           teamId = uuidv4();
         }
@@ -480,7 +466,7 @@ export function AdminCreators() {
           bac_matricule: newTeam.role === 'team-leader' ? (newTeam.bacMatricule || null) : null,
           bac_year: newTeam.role === 'team-leader' ? (Number(newTeam.bacYear) || null) : null,
           affiliation: newTeam.role === 'teacher' ? newTeam.name : null,
-          team_id: teamId, // Assign team ID before creation!
+          team_id: teamId,
           manage: true
         };
 
@@ -493,7 +479,6 @@ export function AdminCreators() {
         userId = (userResponse.data as any).id;
       }
 
-      // 2. Create Team Profile (if not teacher)
       if (newTeam.role !== 'teacher') {
         const teamPayload = {
           id: teamId || uuidv4(), // Use existing/generated ID
@@ -505,7 +490,6 @@ export function AdminCreators() {
 
         const teamResponse = await api.teams.create(teamPayload);
         if (!teamResponse.success) {
-          // If we created a NEW user, roll back
           if (!existingUser) await api.users.delete(userId);
           toast.error(teamResponse.message || 'Failed to create team profile');
           setIsLoading(false);
@@ -513,15 +497,13 @@ export function AdminCreators() {
         }
       }
 
-      // 3. Delete any associated creator request if it exists
       const matchingReq = creatorRequests.find(r => r.email === newTeam.email || r.username === newTeam.username);
       if (matchingReq) {
         await api.creatorRequests.update({ id: String(matchingReq.id), action: 'approve' });
         setCreatorRequests(prev => prev.filter(r => r.id !== matchingReq.id));
       }
 
-      // Success cleanup
-      fetchTeams(); // Refresh list
+      fetchTeams();
       setNewTeam({
         name: '',
         role: 'team-leader',
@@ -647,7 +629,7 @@ export function AdminCreators() {
                   />
                 </div>
 
-                {/* Leader/Rep Name - Only for Team Leader & Company, Teacher Name is entity name */}
+                {/* Leader/Rep Name */}
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="leader-name" className="text-right">
                     {newTeam.role === 'company' ? 'Representative' :

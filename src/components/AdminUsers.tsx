@@ -1,4 +1,3 @@
-// AdminUsers.tsx
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -91,7 +90,6 @@ export function AdminUsers() {
           teamId: u.team_id || 0,
           avatar: u.avatar,
           manage: Boolean(u.manage),
-          // map bac fields from API if present
           bacMatricule: u.bac_matricule ?? undefined,
           bacYear: u.bac_year ? Number(u.bac_year) : undefined
         }));
@@ -175,7 +173,6 @@ export function AdminUsers() {
       let aValue = a[sortField];
       let bValue = b[sortField];
 
-      // Use custom role ordering when sorting by role
       if (sortField === 'role') {
         const aOrder = getRoleOrder(a.role);
         const bOrder = getRoleOrder(b.role);
@@ -186,7 +183,6 @@ export function AdminUsers() {
         }
       }
 
-      // Handle string comparisons
       if (typeof aValue === 'string' && typeof bValue === 'string') {
         aValue = aValue.toLowerCase();
         bValue = bValue.toLowerCase();
@@ -281,7 +277,6 @@ export function AdminUsers() {
     setIsLoading(true);
     try {
       if (hasTeam) {
-        // Delete team first (cascade might handle user, but we'll be explicit if needed)
         await api.teams.delete(String(user.teamId));
       }
 
@@ -321,14 +316,14 @@ export function AdminUsers() {
   const handleUpdateUser = async () => {
     if (!selectedUser) return;
 
-    // basic bac matricule validation: must be empty or exactly 8 digits
+    // bac matricule: empty or exactly 8 digits
     const matricule = editUser.bacMatricule?.trim();
     if (matricule && !/^\d{8}$/.test(matricule)) {
       toast.error('Bac matricule must be exactly 8 digits.');
       return;
     }
 
-    // bac year validation (optional): should be a reasonable 4-digit year if provided
+    // bac year: reasonable 4-digit year if provided
     const yearStr = editUser.bacYear?.trim();
     if (yearStr && !/^\d{4}$/.test(yearStr)) {
       toast.error('Bac year must be a 4-digit year (e.g. 2018).');
@@ -344,8 +339,9 @@ export function AdminUsers() {
         role: editUser.role,
       };
 
-      // Only include password if it's been changed
+      // only send password if changed
       if (editUser.password && editUser.password.trim() !== '') {
+        // password: 8+ chars, uppercase, lowercase, digit, special
         const isPasswordValid = editUser.password.length >= 8 && /[A-Z]/.test(editUser.password) && /[a-z]/.test(editUser.password) && /\d/.test(editUser.password) && /[^A-Za-z0-9]/.test(editUser.password);
         if (!isPasswordValid) {
             toast.error('Password does not meet the requirements!');
@@ -354,7 +350,7 @@ export function AdminUsers() {
         updateData.password = editUser.password;
       }
 
-      // Include bac fields if present (allow clearing by sending null)
+      // bac fields: send null to clear
       if (matricule !== undefined) {
         updateData.bac_matricule = matricule === '' ? null : matricule;
       }
@@ -381,7 +377,6 @@ export function AdminUsers() {
   };
 
   const handleAddUser = async () => {
-    // Validate Bac Year vs Join Date
     if (newUser.joinDate && newUser.bacYear) {
       const joinYear = new Date(newUser.joinDate).getFullYear();
       const bacYearNum = Number(newUser.bacYear);
@@ -392,6 +387,7 @@ export function AdminUsers() {
     }
 
     if (newUser.name && newUser.username && newUser.password && newUser.email && newUser.team) {
+      // password: 8+ chars, uppercase, lowercase, digit, special
       const isPasswordValid = newUser.password.length >= 8 && /[A-Z]/.test(newUser.password) && /[a-z]/.test(newUser.password) && /\d/.test(newUser.password) && /[^A-Za-z0-9]/.test(newUser.password);
       if (!isPasswordValid) {
         toast.error('Password does not meet the requirements!');
@@ -732,7 +728,7 @@ export function AdminUsers() {
               />
             </div>
 
-            {/* BAC Fields for Edit User (Students & Team Leaders Only) */}
+            {/* BAC Fields */}
             {['student', 'team-leader', 'team_leader'].includes(editUser.role?.toLowerCase()) && (
               <>
                 <div className="grid grid-cols-4 items-center gap-4">

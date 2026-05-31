@@ -32,6 +32,7 @@ function formatShortDate(dateStr?: string): string {
   });
 }
 
+// generate printable HTML report and open in new window
 export function exportEventApplicantsPDF(event: EventForPDF, applicants: ApplicantForPDF[] = []): void {
   const applicantRows = applicants.map((a, idx) => {
     const name = a.full_name || a.username || 'Guest';
