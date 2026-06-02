@@ -1,4 +1,10 @@
 import { GoogleGenAI, Type } from '@google/genai';
+
+// Polyfill DOMMatrix for pdf-parse in Vercel/Node edge environments
+if (typeof global !== 'undefined' && typeof global.DOMMatrix === 'undefined') {
+    global.DOMMatrix = class DOMMatrix {} as any;
+}
+
 import { PDFParse } from 'pdf-parse';
 
 const ai = new GoogleGenAI({
