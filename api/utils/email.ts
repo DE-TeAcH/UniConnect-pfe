@@ -56,7 +56,16 @@ export async function sendPinEmail(to: string, pin: string, purpose: 'register' 
 }
 
 export async function sendCreatorEventEmail(bccEmails: string[], creatorName: string, eventTitle: string, eventStartDate: string) {
-    if (!emailUser || !emailPass || !emailFrom || bccEmails.length === 0) return;
+    if (!emailUser || !emailPass || !emailFrom) {
+        console.error('Creator event email skipped: email credentials are not configured');
+        return;
+    }
+
+    const recipients = [...new Set(bccEmails.filter(Boolean))];
+    if (recipients.length === 0) {
+        console.log('Creator event email skipped: no opted-in followers');
+        return;
+    }
 
     const subject = `UniConnect - New Event from ${creatorName}!`;
     const html = `
@@ -73,13 +82,27 @@ export async function sendCreatorEventEmail(bccEmails: string[], creatorName: st
         </div>
     </div>`;
 
-    await transporter.sendMail({
-        from: `"UniConnect" <${emailFrom}>`,
-        to: emailFrom,
-        bcc: bccEmails,
-        subject,
-        html,
-    });
+    for (const recipient of recipients) {
+        try {
+            const info = await transporter.sendMail({
+                from: `"UniConnect" <${emailFrom}>`,
+                to: recipient,
+                subject,
+                html,
+            });
+            console.log('Creator event email sent', {
+                recipient,
+                messageId: info.messageId,
+            });
+        } catch (err: any) {
+            console.error('Creator event email failed', {
+                recipient,
+                message: err?.message || String(err),
+                code: err?.code,
+                response: err?.response,
+            });
+        }
+    }
 }
 
 export async function sendApplicationConfirmationEmail(to: string, eventTitle: string, startDate: string, location: string, time: string) {

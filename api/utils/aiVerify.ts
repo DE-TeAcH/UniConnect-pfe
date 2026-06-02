@@ -128,15 +128,9 @@ Respond ONLY with a valid JSON object (no markdown, no explanation outside the J
             };
         }
 
-        if (!parsed.isValid) {
-            console.warn('AI verification rejected the PDF, but upload was allowed', {
-                reasoning: parsed.reasoning || 'No reasoning provided.',
-            });
-        }
-
         return {
-            isValid: true,
-            reasoning: parsed.reasoning || 'AI verification completed. Event allowed.',
+            isValid: !!parsed.isValid,
+            reasoning: parsed.reasoning || 'No reasoning provided.',
         };
     } catch (err: any) {
         console.error('AI verification error:', {

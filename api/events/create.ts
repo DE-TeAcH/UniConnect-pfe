@@ -126,6 +126,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 [creator_id]
             );
             
+            console.log('Follower notification recipients found', {
+                creator_id,
+                count: followers.length,
+            });
+
             if (followers.length > 0) {
                 const bccEmails = followers.map((f: any) => f.email);
                 
