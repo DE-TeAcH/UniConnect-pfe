@@ -496,7 +496,7 @@ export function TeamLeaderEvents({ currentUser }: TeamLeaderEventsProps) {
                                     {event.is_paid && event.join_url && (
                                         <div className="mt-3 flex items-center gap-2 text-sm">
                                             <Link className="h-4 w-4 text-muted-foreground" />
-                                            <a href={event.join_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{event.join_url}</a>
+                                            <a href={event.join_url?.match(/^https?:\/\//) ? event.join_url : 'https://' + event.join_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{event.join_url}</a>
                                         </div>
                                     )}
                                 </CardContent>

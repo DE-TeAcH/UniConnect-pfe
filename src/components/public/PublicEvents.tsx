@@ -149,7 +149,8 @@ export function PublicEvents() {
             setLoadingActions(prev => ({...prev, [eventId]: true}));
             try {
                 await api.eventRedirects.create({ event_id: String(eventId), user_id: user ? String(user.id) : undefined });
-                window.open(url, '_blank');
+                const fullUrl = url.match(/^https?:\/\//) ? url : `https://${url}`;
+                window.open(fullUrl, '_blank');
             } catch (err) {
                 console.error('Failed to log redirect', err);
             } finally {

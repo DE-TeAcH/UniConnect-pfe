@@ -82,10 +82,11 @@ export function PublicDashboard() {
         if (url) {
             try {
                 await api.eventRedirects.create({ event_id: String(eventId), user_id: user ? String(user.id) : undefined });
+                const fullUrl = url.match(/^https?:\/\//) ? url : `https://${url}`;
+                window.open(fullUrl, '_blank');
             } catch (err) {
                 console.error('Failed to log redirect', err);
             }
-            window.open(url, '_blank');
         } else {
             toast.info('No website link available.');
         }

@@ -97,7 +97,7 @@ export function exportEventApplicantsPDF(event: EventForPDF, applicants: Applica
     </div>
     <div class="meta">
       <span><strong>Generated:</strong> ${formatDate(new Date().toISOString())}</span>
-      <span><strong>Type:</strong> ${event.is_paid ? `Paid (${(event.price || 0).toFixed(2)} DZD)` : 'Free'}</span>
+      <span><strong>Type:</strong> ${event.is_paid ? `Paid (${Number(event.price || 0).toFixed(2)} DZD)` : 'Free'}</span>
     </div>
   </div>
 
