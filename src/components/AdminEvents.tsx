@@ -203,13 +203,17 @@ export function AdminEvents() {
         laboratory: form.laboratory,
       };
       if (editingId !== null) {
-        await api.events.update({ id: editingId, ...payload });
-        toast.success('Event updated.');
+        const res = await api.events.update({ id: editingId, ...payload });
+        if (res.success) {
+            toast.success('Event updated.');
+            await fetchEvents();
+            setIsOpen(false);
+            setForm(emptyForm());
+            setEditingId(null);
+        } else {
+            toast.error(res.message || 'Failed to update event.');
+        }
       }
-      await fetchEvents();
-      setIsOpen(false);
-      setForm(emptyForm());
-      setEditingId(null);
     } catch (e) { toast.error('Failed to save event.'); }
     finally { setIsSaving(false); }
   };

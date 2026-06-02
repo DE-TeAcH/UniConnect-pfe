@@ -137,18 +137,29 @@ export function TeacherEvents({ currentUser }: TeacherEventsProps) {
             }
             if (editingId) {
                 const res = await api.events.update({ id: editingId, ...payload });
-                if (res.success) { toast.success('Event updated.'); fetchEvents(); }
-                else toast.error(res.message);
+                if (res.success) { 
+                    toast.success('Event updated.'); 
+                    fetchEvents(); 
+                    setIsOpen(false);
+                    setForm(emptyForm());
+                    setEditingId(null);
+                } else {
+                    toast.error(res.message);
+                }
             } else {
                 const res = await api.events.create(payload);
-                if (res.success) { toast.success('Event created.'); fetchEvents(); }
-                else toast.error(res.message);
+                if (res.success) { 
+                    toast.success('Event created.'); 
+                    fetchEvents(); 
+                    setIsOpen(false);
+                    setForm(emptyForm());
+                    setEditingId(null);
+                } else {
+                    toast.error(res.message);
+                }
             }
         } catch (e) { toast.error('Server error.'); }
         finally { setIsSaving(false); }
-        setIsOpen(false);
-        setForm(emptyForm());
-        setEditingId(null);
     };
 
     const handleEdit = (e: any) => {

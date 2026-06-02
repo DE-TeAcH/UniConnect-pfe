@@ -45,9 +45,12 @@ export async function verifyEventPDF(
     }
 
     if (!pdfText || pdfText.trim().length < 20) {
+        console.warn('AI verification skipped: extracted PDF text is too short', {
+            textLength: pdfText?.trim().length || 0,
+        });
         return {
-            isValid: false,
-            reasoning: 'The uploaded PDF appears to be empty or contains very little text. Please upload a document that describes the event.',
+            isValid: true,
+            reasoning: 'PDF text was too short for AI verification. Event allowed.',
         };
     }
 
@@ -89,8 +92,8 @@ Respond ONLY with a valid JSON object (no markdown, no explanation outside the J
     if (!apiKey) {
         console.error('AI verification error: GEMINI_API_KEY is not configured');
         return {
-            isValid: false,
-            reasoning: 'AI verification is not configured. Please contact support.',
+            isValid: true,
+            reasoning: 'AI verification is not configured. Event allowed.',
         };
     }
 
@@ -120,14 +123,20 @@ Respond ONLY with a valid JSON object (no markdown, no explanation outside the J
         } catch (parseErr) {
             console.error('Failed to parse AI response JSON. Raw content:', content);
             return {
-                isValid: false,
-                reasoning: 'AI verification produced an invalid response format. Please try again or use a clearer PDF.',
+                isValid: true,
+                reasoning: 'AI verification produced an invalid response format. Event allowed.',
             };
         }
 
+        if (!parsed.isValid) {
+            console.warn('AI verification rejected the PDF, but upload was allowed', {
+                reasoning: parsed.reasoning || 'No reasoning provided.',
+            });
+        }
+
         return {
-            isValid: !!parsed.isValid,
-            reasoning: parsed.reasoning || 'No reasoning provided.',
+            isValid: true,
+            reasoning: parsed.reasoning || 'AI verification completed. Event allowed.',
         };
     } catch (err: any) {
         console.error('AI verification error:', {
@@ -136,8 +145,8 @@ Respond ONLY with a valid JSON object (no markdown, no explanation outside the J
             code: err?.code,
         });
         return { 
-            isValid: false, 
-            reasoning: 'AI verification service encountered an error. Please try again later.' 
+            isValid: true,
+            reasoning: 'AI verification service encountered an error. Event allowed.' 
         };
     }
 }
