@@ -5,7 +5,7 @@ if (typeof global !== 'undefined' && typeof global.DOMMatrix === 'undefined') {
     global.DOMMatrix = class DOMMatrix {} as any;
 }
 
-import pdfParse from 'pdf-parse';
+import PDFParser from 'pdf2json';
 
 const ai = new GoogleGenAI({
     apiKey: process.env.GEMINI_API_KEY,
@@ -33,11 +33,17 @@ export async function verifyEventPDF(
     pdfBuffer: Buffer,
     eventDetails: EventDetails
 ): Promise<VerificationResult> {
-    // 1. Extract text from the PDF using pdf-parse v1.1.1 API
+    // 1. Extract text from the PDF using pdf2json
     let pdfText: string;
     try {
-        const data = await pdfParse(pdfBuffer);
-        pdfText = data.text;
+        pdfText = await new Promise((resolve, reject) => {
+            const pdfParser = new PDFParser(null as any, 1);
+            pdfParser.on('pdfParser_dataError', errData => reject(errData.parserError));
+            pdfParser.on('pdfParser_dataReady', () => {
+                resolve(pdfParser.getRawTextContent());
+            });
+            pdfParser.parseBuffer(pdfBuffer);
+        });
     } catch (err: any) {
         console.error('PDF parse error:', err?.message || err);
         return {
