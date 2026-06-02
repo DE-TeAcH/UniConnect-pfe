@@ -124,6 +124,8 @@ export function PublicStoreProvider({ children }: { children: React.ReactNode })
         setAppliedEventIds([]);
         setSavedEventIds([]);
         setFollowedCreatorIds([]);
+        localStorage.removeItem('public_currentView');
+        localStorage.removeItem('public_currentEntityId');
     };
 
     const continueAsGuest = () => {
@@ -190,8 +192,14 @@ export function PublicStoreProvider({ children }: { children: React.ReactNode })
         }
     };
 
-    const [currentView, setCurrentView] = useState<PublicView>('dashboard');
-    const [currentEntityId, setCurrentEntityId] = useState<string | number | null>(null);
+    const [currentView, setCurrentView] = useState<PublicView>(() => {
+        const saved = localStorage.getItem('public_currentView');
+        return (saved as PublicView) || 'dashboard';
+    });
+    const [currentEntityId, setCurrentEntityId] = useState<string | number | null>(() => {
+        const saved = localStorage.getItem('public_currentEntityId');
+        return saved || null;
+    });
 
     useEffect(() => {
         window.history.replaceState({ view: currentView, entityId: currentEntityId }, '', window.location.href);
@@ -210,11 +218,13 @@ export function PublicStoreProvider({ children }: { children: React.ReactNode })
     }, []);
 
     const navigateTo = (view: PublicView, entityId?: string | number) => {
-        // Prevent pushing duplicate consecutive states
         if (view !== currentView || entityId !== currentEntityId) {
             window.history.pushState({ view, entityId }, '', window.location.href);
             setCurrentView(view);
             setCurrentEntityId(entityId || null);
+            localStorage.setItem('public_currentView', view);
+            if (entityId) localStorage.setItem('public_currentEntityId', String(entityId));
+            else localStorage.removeItem('public_currentEntityId');
         }
     };
 

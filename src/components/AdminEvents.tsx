@@ -334,10 +334,11 @@ export function AdminEvents() {
                     <Label className="text-right text-sm">Proof (PDF)</Label>
                     <div className="col-span-3 flex items-center gap-2">
                       {form.proofOfAccess && editingId ? (
-                        <a href={`/api/events/pdf?id=${editingId}`} target="_blank" rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors bg-black text-white hover:bg-black/80 dark:bg-white dark:text-black dark:hover:bg-white/80">
-                          <Eye className="h-4 w-4" />Preview PDF
-                        </a>
+                        <Button asChild size="sm" variant="secondary" className="gap-2 bg-black text-white hover:bg-black/80 dark:bg-white dark:text-black dark:hover:bg-white/80">
+                          <a href={`/api/events/pdf?id=${editingId}`} target="_blank" rel="noopener noreferrer">
+                            <Eye className="h-4 w-4" />Preview PDF
+                          </a>
+                        </Button>
                       ) : (
                         <span className="text-sm text-muted-foreground italic">No document attached</span>
                       )}
@@ -681,9 +682,11 @@ export function AdminEvents() {
                       {loadingActionIds[`del_${event.id}`] ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                     </Button>
                     {event.has_pdf && (
-                      <a href={`/api/events/pdf?id=${event.id}`} target="_blank" rel="noopener noreferrer">
-                        <Button size="sm" variant="secondary" className="gap-1 bg-blue-50 text-blue-700 border-blue-100 hover:bg-blue-100"><Eye className="h-4 w-4" />View Proof</Button>
-                      </a>
+                      <Button asChild size="sm" variant="secondary" className="gap-1 bg-blue-50 text-blue-700 border-blue-100 hover:bg-blue-100">
+                        <a href={`/api/events/pdf?id=${event.id}`} target="_blank" rel="noopener noreferrer">
+                          <Eye className="h-4 w-4" />View Proof
+                        </a>
+                      </Button>
                     )}
                     <Button disabled={isExportingMap[event.id]} size="sm" variant="secondary" onClick={() => handleExportPDF(event)} className="gap-1">
                       {isExportingMap[event.id] ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}Export Applicants
@@ -754,9 +757,11 @@ export function AdminEvents() {
               </ScrollArea>
               <DialogFooter>
                 {selectedEvent.has_pdf && (
-                  <a href={`/api/events/pdf?id=${selectedEvent.id}`} target="_blank" rel="noopener noreferrer" className="mr-auto">
-                    <Button size="sm" variant="secondary" className="gap-1 bg-blue-50 text-blue-700 border-blue-100 hover:bg-blue-100"><Eye className="h-4 w-4" />View Proof</Button>
-                  </a>
+                  <Button asChild size="sm" variant="secondary" className="mr-auto gap-1 bg-blue-50 text-blue-700 border-blue-100 hover:bg-blue-100">
+                    <a href={`/api/events/pdf?id=${selectedEvent.id}`} target="_blank" rel="noopener noreferrer">
+                      <Eye className="h-4 w-4" />View Proof
+                    </a>
+                  </Button>
                 )}
                 <Button disabled={isExportingMap[selectedEvent.id]} size="sm" variant="secondary" onClick={() => handleExportPDF(selectedEvent)} className="gap-1">
                   {isExportingMap[selectedEvent.id] ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}Export Applicants
