@@ -128,8 +128,11 @@ export function TeacherEvents({ currentUser }: TeacherEventsProps) {
             const payload: any = {
                 title: form.title, description: form.description, location: form.location,
                 start_date: form.startDate, start_time: form.startTime, end_date: form.endDate, end_time: form.endTime,
-                capacity: form.maxSeats || null, price_type: form.isPaid ? 'paid' : 'free', price: form.isPaid ? form.price : 0,
-                website: form.joinUrl || null, category_id: form.category, creator_id: currentUser?.id,
+                max_seats: form.maxSeats || null,
+                price_type: form.isPaid ? 'paid' : 'free',
+                price: form.isPaid ? form.price : null,
+                website: form.joinUrl,
+                category_id: form.category, creator_id: currentUser?.id,
                 reviewers: form.reviewers, organizers: form.organizers, laboratory: form.laboratory
             };
             if (form.proofOfAccessBase64) {

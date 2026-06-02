@@ -1,4 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
+const pdfParse = require('pdf-parse');
 import PDFParser from 'pdf2json';
 
 interface EventDetails {
@@ -23,19 +24,10 @@ export async function verifyEventPDF(
     pdfBuffer: Buffer,
     eventDetails: EventDetails
 ): Promise<VerificationResult> {
-    // 1. Extract text from the PDF using pdf2json
+    // 1. Extract text from the PDF using a tolerant parser pipeline.
     let pdfText: string;
     try {
-        pdfText = await new Promise<string>((resolve, reject) => {
-            const pdfParser = new PDFParser(null as any, true);
-            pdfParser.on('pdfParser_dataError', (errData: { parserError: Error } | Error) => {
-                reject(errData instanceof Error ? errData : errData.parserError);
-            });
-            pdfParser.on('pdfParser_dataReady', () => {
-                resolve(pdfParser.getRawTextContent());
-            });
-            pdfParser.parseBuffer(pdfBuffer);
-        });
+        pdfText = await extractPdfText(pdfBuffer);
     } catch (err: any) {
         console.error('PDF parse error:', err?.message || err);
         return {
@@ -150,4 +142,54 @@ function stripJsonCodeFence(content: string): string {
         .replace(/^```(?:json)?\s*/i, '')
         .replace(/\s*```$/i, '')
         .trim();
+}
+
+async function extractPdfText(pdfBuffer: Buffer): Promise<string> {
+    const attempts: Array<{ name: string; fn: () => Promise<string> }> = [
+        {
+            name: 'pdf-parse',
+            fn: async () => {
+                const result = await pdfParse(pdfBuffer);
+                return result?.text || '';
+            },
+        },
+        {
+            name: 'pdf2json',
+            fn: () =>
+                new Promise<string>((resolve, reject) => {
+                    const pdfParser = new PDFParser(null as any, true);
+                    pdfParser.on('pdfParser_dataError', (errData: { parserError: Error } | Error) => {
+                        reject(errData instanceof Error ? errData : errData.parserError);
+                    });
+                    pdfParser.on('pdfParser_dataReady', () => {
+                        resolve(pdfParser.getRawTextContent());
+                    });
+                    pdfParser.parseBuffer(pdfBuffer);
+                }),
+        },
+    ];
+
+    let lastError: unknown;
+
+    for (const attempt of attempts) {
+        try {
+            const text = await attempt.fn();
+            if (text && text.trim().length >= 20) {
+                return text;
+            }
+
+            console.warn(`PDF parser "${attempt.name}" returned too little text`, {
+                textLength: text?.trim().length || 0,
+            });
+        } catch (error) {
+            lastError = error;
+            console.warn(`PDF parser "${attempt.name}" failed`, {
+                message: error instanceof Error ? error.message : String(error),
+            });
+        }
+    }
+
+    throw lastError instanceof Error
+        ? lastError
+        : new Error('Both PDF parsers failed to extract usable text');
 }
