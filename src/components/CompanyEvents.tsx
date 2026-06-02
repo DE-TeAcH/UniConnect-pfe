@@ -218,7 +218,7 @@ export function CompanyEvents({ currentUser }: CompanyEventsProps) {
                                         <Select value={(form as any).category} onValueChange={v => setForm(p => ({ ...p, category: v as any }))}>
                                             <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
                                             <SelectContent>
-                                                {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                                                {categories.filter(c => !c.uni_exclusive).map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -252,104 +252,6 @@ export function CompanyEvents({ currentUser }: CompanyEventsProps) {
                                         )}
                                     </div>
                                 </div>
-
-                                {(() => {
-                                    const selectedCat = categories.find(c => c.id === form.category);
-                                    if (selectedCat?.uni_exclusive) {
-                                        return (
-                                            <div className="bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 p-4 rounded-lg space-y-4 mb-2">
-                                                <p className="text-xs font-medium text-blue-800 dark:text-blue-300">
-                                                    <Mic className="h-3.5 w-3.5 inline mr-1 mb-0.5" />
-                                                    This exclusive category requires additional verified details.
-                                                </p>
-
-                                                {/* Reviewers */}
-                                                <div className="grid grid-cols-4 items-start gap-4">
-                                                    <Label className="text-right text-sm mt-2">Reviewers</Label>
-                                                    <div className="col-span-3 space-y-2">
-                                                        <div className="flex gap-2">
-                                                            <Input placeholder="Reviewer name" value={newReviewer} onChange={e => setNewReviewer(e.target.value)}
-                                                                onKeyDown={e => {
-                                                                    if (e.key === 'Enter') {
-                                                                        e.preventDefault();
-                                                                        if (newReviewer.trim()) {
-                                                                            setForm(p => ({ ...p, reviewers: [...p.reviewers, newReviewer.trim()] }));
-                                                                            setNewReviewer('');
-                                                                        }
-                                                                    }
-                                                                }}
-                                                            />
-                                                            <Button type="button" size="sm" variant="secondary" onClick={() => {
-                                                                if (newReviewer.trim()) {
-                                                                    setForm(p => ({ ...p, reviewers: [...p.reviewers, newReviewer.trim()] }));
-                                                                    setNewReviewer('');
-                                                                }
-                                                            }}>Add</Button>
-                                                        </div>
-                                                        {form.reviewers.length > 0 && (
-                                                            <div className="flex flex-wrap gap-2">
-                                                                {form.reviewers.map((r, i) => (
-                                                                    <Badge key={i} variant="secondary" className="pl-2 pr-1 py-1 gap-1">
-                                                                        {r}
-                                                                        <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => setForm(p => ({ ...p, reviewers: p.reviewers.filter((_, idx) => idx !== i) }))}>
-                                                                            &times;
-                                                                        </button>
-                                                                    </Badge>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                {/* Organizers */}
-                                                <div className="grid grid-cols-4 items-start gap-4">
-                                                    <Label className="text-right text-sm mt-2">Organizers</Label>
-                                                    <div className="col-span-3 space-y-2">
-                                                        <div className="flex gap-2">
-                                                            <Input placeholder="Organizer name" value={newOrganizer} onChange={e => setNewOrganizer(e.target.value)}
-                                                                onKeyDown={e => {
-                                                                    if (e.key === 'Enter') {
-                                                                        e.preventDefault();
-                                                                        if (newOrganizer.trim()) {
-                                                                            setForm(p => ({ ...p, organizers: [...p.organizers, newOrganizer.trim()] }));
-                                                                            setNewOrganizer('');
-                                                                        }
-                                                                    }
-                                                                }}
-                                                            />
-                                                            <Button type="button" size="sm" variant="secondary" onClick={() => {
-                                                                if (newOrganizer.trim()) {
-                                                                    setForm(p => ({ ...p, organizers: [...p.organizers, newOrganizer.trim()] }));
-                                                                    setNewOrganizer('');
-                                                                }
-                                                            }}>Add</Button>
-                                                        </div>
-                                                        {form.organizers.length > 0 && (
-                                                            <div className="flex flex-wrap gap-2">
-                                                                {form.organizers.map((o, i) => (
-                                                                    <Badge key={i} variant="secondary" className="pl-2 pr-1 py-1 gap-1">
-                                                                        {o}
-                                                                        <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => setForm(p => ({ ...p, organizers: p.organizers.filter((_, idx) => idx !== i) }))}>
-                                                                            &times;
-                                                                        </button>
-                                                                    </Badge>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                {/* Laboratory */}
-                                                <div className="grid grid-cols-4 items-center gap-4">
-                                                    <Label className="text-right text-sm">Laboratory</Label>
-                                                    <Input className="col-span-3" placeholder="Managing laboratory" value={(form as any).laboratory}
-                                                        onChange={e => setForm(p => ({ ...p, laboratory: e.target.value }))} />
-                                                </div>
-                                            </div>
-                                        );
-                                    }
-                                    return null;
-                                })()}
                                 <div className="grid grid-cols-4 items-start gap-4">
                                     <Label className="text-right text-sm mt-2">Description</Label>
                                     <textarea className="col-span-3 flex min-h-[80px] w-full rounded-md border border-input bg-[var(--input-background)] px-3 py-2 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
