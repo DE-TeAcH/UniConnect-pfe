@@ -1,15 +1,5 @@
-import { GoogleGenAI, Type } from '@google/genai';
-
-// Polyfill DOMMatrix for pdf-parse in Vercel/Node edge environments
-if (typeof global !== 'undefined' && typeof global.DOMMatrix === 'undefined') {
-    global.DOMMatrix = class DOMMatrix {} as any;
-}
-
+import { GoogleGenAI } from '@google/genai';
 import PDFParser from 'pdf2json';
-
-const ai = new GoogleGenAI({
-    apiKey: process.env.GEMINI_API_KEY,
-});
 
 interface EventDetails {
     title: string;
@@ -36,9 +26,11 @@ export async function verifyEventPDF(
     // 1. Extract text from the PDF using pdf2json
     let pdfText: string;
     try {
-        pdfText = await new Promise((resolve, reject) => {
-            const pdfParser = new PDFParser(null as any, 1);
-            pdfParser.on('pdfParser_dataError', errData => reject(errData.parserError));
+        pdfText = await new Promise<string>((resolve, reject) => {
+            const pdfParser = new PDFParser(null as any, true);
+            pdfParser.on('pdfParser_dataError', (errData: { parserError: Error } | Error) => {
+                reject(errData instanceof Error ? errData : errData.parserError);
+            });
             pdfParser.on('pdfParser_dataReady', () => {
                 resolve(pdfParser.getRawTextContent());
             });
@@ -93,8 +85,18 @@ Respond ONLY with a valid JSON object (no markdown, no explanation outside the J
 
     console.log('\n===== AI VERIFICATION PROMPT =====\n', prompt, '\n===== END PROMPT =====\n');
 
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+        console.error('AI verification error: GEMINI_API_KEY is not configured');
+        return {
+            isValid: false,
+            reasoning: 'AI verification is not configured. Please contact support.',
+        };
+    }
+
     // 3. Call Gemini
     try {
+        const ai = new GoogleGenAI({ apiKey });
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
@@ -114,7 +116,7 @@ Respond ONLY with a valid JSON object (no markdown, no explanation outside the J
         // Parse the JSON response
         let parsed;
         try {
-            parsed = JSON.parse(content);
+            parsed = JSON.parse(stripJsonCodeFence(content));
         } catch (parseErr) {
             console.error('Failed to parse AI response JSON. Raw content:', content);
             return {
@@ -128,10 +130,21 @@ Respond ONLY with a valid JSON object (no markdown, no explanation outside the J
             reasoning: parsed.reasoning || 'No reasoning provided.',
         };
     } catch (err: any) {
-        console.error('AI verification error:', err?.message || err);
+        console.error('AI verification error:', {
+            message: err?.message || String(err),
+            status: err?.status,
+            code: err?.code,
+        });
         return { 
             isValid: false, 
             reasoning: 'AI verification service encountered an error. Please try again later.' 
         };
     }
+}
+
+function stripJsonCodeFence(content: string): string {
+    return content
+        .replace(/^```(?:json)?\s*/i, '')
+        .replace(/\s*```$/i, '')
+        .trim();
 }
